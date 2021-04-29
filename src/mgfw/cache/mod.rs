@@ -1,0 +1,55 @@
+const CACHE_SZ: usize = 4 * 1024;
+
+struct CacheManagerHeader {
+    start: usize,
+    loading: i32,
+}
+
+pub struct CacheManager {
+    data: std::boxed::Box<[u8; CACHE_SZ]>,
+    // WARNING: Anything below this line is not in cache!
+}
+
+#[allow(dead_code)]
+impl CacheManager {
+    pub fn new() -> CacheManager {
+        println!("Constructing CacheManager");
+        let mut data = Box::new([0; CACHE_SZ]);
+        let header = unsafe { &mut *(data.as_mut_ptr().offset(0) as *mut CacheManagerHeader) };
+        header.start = std::mem::size_of::<CacheManagerHeader>();
+
+        if cfg!(debug_assertions) {
+            // artificially pre-load cache in debug mode
+            header.start += 1024;
+        }
+
+        CacheManager { data }
+    }
+
+    pub fn allocate(&mut self, sz_bytes: usize) -> *mut u8 {
+        unsafe {
+            let header = &mut *(self.data.as_mut_ptr().offset(0) as *mut CacheManagerHeader);
+            assert!(header.start + sz_bytes <= CACHE_SZ);
+
+            let ret = self.data.as_mut_ptr().offset(header.start as isize) as *mut u8;
+            header.start += sz_bytes;
+            println!("CacheManager: Allocated {} bytes", sz_bytes);
+
+            header.loading = (header.start as f32 * 100.0 / CACHE_SZ as f32) as i32;
+            const LOAD_LIMIT_PERCENT: i32 = 80;
+            if LOAD_LIMIT_PERCENT < header.loading {
+                println!(
+                    "WARNING: Cache Loading ({}%) exceeds Load Limit ({}%)",
+                    header.loading, LOAD_LIMIT_PERCENT
+                );
+            }
+
+            ret
+        }
+    }
+
+    pub fn print_loading(&mut self) {
+        let header = unsafe { &*(self.data.as_ptr().offset(0) as *const CacheManagerHeader) };
+        println!("Cache Loading: {}%", header.loading);
+    }
+}

@@ -1,0 +1,244 @@
+use std::fs::File;
+use std::io::{self, BufRead};
+
+use super::*;
+
+pub struct World {
+    // WARNING: Anything below this line is not in cache!
+    ent: std::boxed::Box<EntityRegistry>,
+    pcm: std::boxed::Box<PositionComponentManager>,
+    rcm: std::boxed::Box<RenderComponentManager>,
+    tcm: std::boxed::Box<TextRenderComponentManager>,
+    lcm: std::boxed::Box<LineRenderComponentManager>,
+    trm: std::boxed::Box<TriangleRenderComponentManager>,
+}
+
+#[allow(dead_code)]
+impl World {
+    pub fn new(cache: &mut CacheManager) -> World {
+        println!("Constructing World");
+        World {
+            ent: Box::new(EntityRegistry::new(cache)),
+            pcm: Box::new(PositionComponentManager::new(cache)),
+            rcm: Box::new(RenderComponentManager::new(cache)),
+            tcm: Box::new(TextRenderComponentManager::new(cache)),
+            lcm: Box::new(LineRenderComponentManager::new(cache)),
+            trm: Box::new(TriangleRenderComponentManager::new(cache)),
+        }
+    }
+
+    pub fn new_entity(&mut self) -> usize {
+        self.ent.add()
+    }
+
+    pub fn entity_add_component(&mut self, idx: usize, component: u32) {
+        self.ent.add_component(idx, component);
+    }
+
+    pub fn entity_set_position(&mut self, idx: usize, pos: Position) {
+        self.pcm.set_position(idx, pos.x, pos.y);
+        self.ent.add_component(idx, COMPONENT_POSITION);
+    }
+
+    pub fn entity_set_position_xy(&mut self, idx: usize, x: f32, y: f32) {
+        self.pcm.set_position(idx, x, y);
+        self.ent.add_component(idx, COMPONENT_POSITION);
+    }
+
+    pub fn entity_set_text(&mut self, idx: usize, text: String) {
+        self.tcm.set_text(idx, text);
+        self.ent.add_component(idx, COMPONENT_RENDER);
+        self.rcm.set_type(idx, RENDER_TYPE_TEXT);
+    }
+
+    pub fn entity_set_line_buffer(&mut self, idx: usize, pnts: &Vec<Position>, clrs: &Vec<Color>) {
+        self.lcm.set_line_buffer(idx, pnts, clrs);
+        self.ent.add_component(idx, COMPONENT_RENDER);
+        self.rcm.set_type(idx, RENDER_TYPE_LINE_BUFFER);
+    }
+
+    pub fn entity_set_triangle_buffer(
+        &mut self,
+        idx: usize,
+        pnts: &Vec<Position>,
+        clrs: &Vec<Color>,
+    ) {
+        self.trm.set_triangle_buffer(idx, pnts, clrs);
+        self.ent.add_component(idx, COMPONENT_RENDER);
+        self.rcm.set_type(idx, RENDER_TYPE_TRIANGLE_BUFFER);
+    }
+
+    pub fn entity_set_active(&mut self, idx: usize, val: bool) {
+        self.ent.set_active(idx, val);
+    }
+
+    pub fn entity_is_active(&self, idx: usize) -> bool {
+        self.ent.is_active(idx)
+    }
+
+    pub fn entity_set_visibility(&mut self, idx: usize, val: bool) {
+        self.ent.set_visibility(idx, val);
+    }
+
+    pub fn entity_is_visible(&self, idx: usize) -> bool {
+        self.ent.is_visible(idx)
+    }
+
+    pub fn get_entities(&self) -> &EntityRegistry {
+        &self.ent
+    }
+
+    pub fn get_manager_position(&self) -> &PositionComponentManager {
+        &self.pcm
+    }
+
+    pub fn get_manager_text(&self) -> &TextRenderComponentManager {
+        &self.tcm
+    }
+
+    pub fn get_manager_render(&self) -> &RenderComponentManager {
+        &self.rcm
+    }
+
+    pub fn get_manager_line(&self) -> &LineRenderComponentManager {
+        &self.lcm
+    }
+
+    pub fn get_manager_triangle(&self) -> &TriangleRenderComponentManager {
+        &self.trm
+    }
+
+    pub fn text_get_width(&self, idx: usize) -> usize {
+        self.tcm.get_width(idx)
+    }
+
+    pub fn text_construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
+        self.tcm.construct(idx, gl, vao, vbo);
+    }
+
+    pub fn text_is_constructed(&self, idx: usize) -> bool {
+        self.tcm.is_constructed(idx)
+    }
+
+    pub fn line_buffer_construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
+        self.lcm.construct(idx, gl, vao, vbo);
+    }
+
+    pub fn triangle_buffer_construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
+        self.trm.construct(idx, gl, vao, vbo);
+    }
+
+    pub fn parse_world(&mut self, filename: &str) {
+        println!("World: Parsing '{}'", filename);
+
+        let file = File::open(filename).unwrap();
+        let reader = io::BufReader::new(file);
+
+        for line in reader.lines() {
+            let line = line.unwrap();
+
+            let len = line.len();
+            if 2 > len {
+                continue;
+            }
+
+            let bytes = line.as_bytes();
+            if b'/' == bytes[0] && b'/' == bytes[1] {
+                continue;
+            }
+
+            //println!("{:?}", line);
+
+            let split: Vec<&str> = line.split(',').collect();
+            if 1 > split.len() {
+                continue;
+            }
+
+            let id = split[0].parse::<usize>().unwrap();
+            if id >= entity::ENTITY_SZ {
+                continue;
+            }
+
+            let component = split[1];
+
+            match component {
+                "text" => {
+                    if 3 == split.len() {
+                        let val = split[2].replace("\"", "");
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_text(id, val);
+                    }
+                }
+                "linebuffer" => {
+                    let n = split.len() - 2;
+                    let n_lines: usize = n / 12;
+                    let n_points: usize = n_lines * 2;
+                    if n_lines * 12 == n {
+                        let mut pnts: Vec<Position> = Vec::new();
+                        let mut clrs: Vec<Color> = Vec::new();
+
+                        for p in 0..n_points {
+                            let pidx: usize = 2 + p * 6;
+                            pnts.push(Position {
+                                x: split[pidx + 0].parse::<f32>().unwrap(),
+                                y: split[pidx + 1].parse::<f32>().unwrap(),
+                            });
+                            clrs.push(Color {
+                                r: split[pidx + 2].parse::<f32>().unwrap(),
+                                g: split[pidx + 3].parse::<f32>().unwrap(),
+                                b: split[pidx + 4].parse::<f32>().unwrap(),
+                                a: split[pidx + 5].parse::<f32>().unwrap(),
+                            });
+                        }
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_line_buffer(id, &pnts, &clrs);
+                    }
+                }
+                "tribuffer" => {
+                    let n = split.len() - 2;
+                    let n_triangles: usize = n / 18;
+                    let n_points: usize = n_triangles * 3;
+                    if n_triangles * 18 == n {
+                        let mut pnts: Vec<Position> = Vec::new();
+                        let mut clrs: Vec<Color> = Vec::new();
+
+                        for p in 0..n_points {
+                            let pidx: usize = 2 + p * 6;
+                            pnts.push(Position {
+                                x: split[pidx + 0].parse::<f32>().unwrap(),
+                                y: split[pidx + 1].parse::<f32>().unwrap(),
+                            });
+                            clrs.push(Color {
+                                r: split[pidx + 2].parse::<f32>().unwrap(),
+                                g: split[pidx + 3].parse::<f32>().unwrap(),
+                                b: split[pidx + 4].parse::<f32>().unwrap(),
+                                a: split[pidx + 5].parse::<f32>().unwrap(),
+                            });
+                        }
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_triangle_buffer(id, &pnts, &clrs);
+                    }
+                }
+                "visible" => {
+                    if 3 == split.len() {
+                        let val = split[2];
+                        match val {
+                            "true" => self.ent.set_visibility(id, true),
+                            "false" => self.ent.set_visibility(id, false),
+                            _ => (),
+                        }
+                    }
+                }
+                "position" => {
+                    if 4 == split.len() {
+                        let x = split[2].parse::<f32>().unwrap();
+                        let y = split[3].parse::<f32>().unwrap();
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_position_xy(id, x, y);
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+}
