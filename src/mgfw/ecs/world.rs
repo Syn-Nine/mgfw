@@ -7,6 +7,7 @@ pub struct World {
     // WARNING: Anything below this line is not in cache!
     ent: std::boxed::Box<EntityRegistry>,
     pcm: std::boxed::Box<PositionComponentManager>,
+    phcm: std::boxed::Box<PhysicsComponentManager>,
     rcm: std::boxed::Box<RenderComponentManager>,
     tcm: std::boxed::Box<TextRenderComponentManager>,
     lcm: std::boxed::Box<LineRenderComponentManager>,
@@ -20,6 +21,7 @@ impl World {
         World {
             ent: Box::new(EntityRegistry::new(cache)),
             pcm: Box::new(PositionComponentManager::new(cache)),
+            phcm: Box::new(PhysicsComponentManager::new(cache)),
             rcm: Box::new(RenderComponentManager::new(cache)),
             tcm: Box::new(TextRenderComponentManager::new(cache)),
             lcm: Box::new(LineRenderComponentManager::new(cache)),
@@ -35,6 +37,10 @@ impl World {
         self.ent.add_component(idx, component);
     }
 
+    pub fn entity_get_position(&mut self, idx: usize) -> Position {
+        self.pcm.get_position(idx)
+    }
+
     pub fn entity_set_position(&mut self, idx: usize, pos: Position) {
         self.pcm.set_position(idx, pos.x, pos.y);
         self.ent.add_component(idx, COMPONENT_POSITION);
@@ -43,6 +49,38 @@ impl World {
     pub fn entity_set_position_xy(&mut self, idx: usize, x: f32, y: f32) {
         self.pcm.set_position(idx, x, y);
         self.ent.add_component(idx, COMPONENT_POSITION);
+    }
+
+    pub fn entity_get_velocity(&mut self, idx: usize) -> Velocity {
+        self.phcm.get_velocity(idx)
+    }
+
+    pub fn entity_get_acceleration(&mut self, idx: usize) -> Acceleration {
+        self.phcm.get_acceleration(idx)
+    }
+
+    pub fn entity_set_velocity(&mut self, idx: usize, vel: Velocity) {
+        self.phcm.set_velocity(idx, vel.x, vel.y);
+        self.ent.add_component(idx, COMPONENT_POSITION);
+        self.ent.add_component(idx, COMPONENT_PHYSICS);
+    }
+
+    pub fn entity_set_velocity_xy(&mut self, idx: usize, x: f32, y: f32) {
+        self.phcm.set_velocity(idx, x, y);
+        self.ent.add_component(idx, COMPONENT_POSITION);
+        self.ent.add_component(idx, COMPONENT_PHYSICS);
+    }
+
+    pub fn entity_set_acceleration(&mut self, idx: usize, accel: Acceleration) {
+        self.phcm.set_acceleration(idx, accel.x, accel.y);
+        self.ent.add_component(idx, COMPONENT_POSITION);
+        self.ent.add_component(idx, COMPONENT_PHYSICS);
+    }
+
+    pub fn entity_set_acceleration_xy(&mut self, idx: usize, x: f32, y: f32) {
+        self.phcm.set_acceleration(idx, x, y);
+        self.ent.add_component(idx, COMPONENT_POSITION);
+        self.ent.add_component(idx, COMPONENT_PHYSICS);
     }
 
     pub fn entity_set_text(&mut self, idx: usize, text: String) {
@@ -98,6 +136,10 @@ impl World {
 
     pub fn get_manager_render(&self) -> &RenderComponentManager {
         &self.rcm
+    }
+
+    pub fn get_manager_physics(&self) -> &PhysicsComponentManager {
+        &self.phcm
     }
 
     pub fn get_manager_line(&self) -> &LineRenderComponentManager {
@@ -235,6 +277,22 @@ impl World {
                         let y = split[3].parse::<f32>().unwrap();
                         self.ent.add_component(id, COMPONENT_ACTIVE);
                         self.entity_set_position_xy(id, x, y);
+                    }
+                }
+                "velocity" => {
+                    if 4 == split.len() {
+                        let x = split[2].parse::<f32>().unwrap();
+                        let y = split[3].parse::<f32>().unwrap();
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_velocity_xy(id, x, y);
+                    }
+                }
+                "acceleration" => {
+                    if 4 == split.len() {
+                        let x = split[2].parse::<f32>().unwrap();
+                        let y = split[3].parse::<f32>().unwrap();
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_acceleration_xy(id, x, y);
                     }
                 }
                 _ => (),

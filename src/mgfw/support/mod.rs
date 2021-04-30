@@ -6,7 +6,7 @@ use cgmath::*;
 use glutin::{self, PossiblyCurrent};
 
 pub mod gl {
-    pub use self::Gles2 as Gl;
+    //pub use self::Gl as Gl;
     include!(concat!(env!("OUT_DIR"), "/gl_bindings.rs"));
 }
 
@@ -245,6 +245,8 @@ pub fn load(gl_context: &glutin::Context<PossiblyCurrent>, xres: i32, yres: i32)
         gl.ClearColor(color[0], color[1], color[2], color[3]);
         gl.Enable(gl::BLEND);
         gl.BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        gl.Enable(gl::MULTISAMPLE);
+        gl.Enable(gl::LINE_SMOOTH);
 
         //---------------------------------------------------------------------
 
@@ -271,12 +273,12 @@ pub fn load(gl_context: &glutin::Context<PossiblyCurrent>, xres: i32, yres: i32)
         gl.TexParameteri(
             gl::TEXTURE_2D,
             gl::TEXTURE_MIN_FILTER,
-            gl::NEAREST as gl::types::GLint,
+            gl::LINEAR as gl::types::GLint,
         );
         gl.TexParameteri(
             gl::TEXTURE_2D,
             gl::TEXTURE_MAG_FILTER,
-            gl::NEAREST as gl::types::GLint,
+            gl::LINEAR as gl::types::GLint,
         );
         gl.TexParameteri(
             gl::TEXTURE_2D,

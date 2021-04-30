@@ -105,8 +105,9 @@ impl RenderSystem {
         expect_blown
     }
 
-    pub fn render(&self, gl: &Gl, world: &World) {
+    pub fn render(&self, gl: &Gl, world: &World, start_time: std::time::Instant) {
         let pcm = world.get_manager_position();
+        let phcm = world.get_manager_physics();
         let rcm = world.get_manager_render();
         let tcm = world.get_manager_text();
         let lcm = world.get_manager_line();
@@ -118,26 +119,49 @@ impl RenderSystem {
                 continue;
             }
 
+            let dt = std::time::Instant::now()
+                .duration_since(start_time)
+                .as_micros() as f32
+                * 1.0e-6;
+
             match rcm.get_type(i) {
                 RENDER_TYPE_LINE_BUFFER => {
                     if lcm.is_constructed(i) {
                         let vao = self.get_data_ref(i).vao_pri;
                         let pos = pcm.get_data_ref(i);
-                        gl.draw_lines(pos.x, pos.y, vao, lcm.get_num_lines(i));
+                        let phys = phcm.get_data_ref(i);
+                        gl.draw_lines(
+                            pos.x + phys.velocity.x * dt,
+                            pos.y + phys.velocity.y * dt,
+                            vao,
+                            lcm.get_num_lines(i),
+                        );
                     }
                 }
                 RENDER_TYPE_TRIANGLE_BUFFER => {
                     if trm.is_constructed(i) {
                         let vao = self.get_data_ref(i).vao_pri;
                         let pos = pcm.get_data_ref(i);
-                        gl.draw_triangles(pos.x, pos.y, vao, trm.get_num_triangles(i));
+                        let phys = phcm.get_data_ref(i);
+                        gl.draw_triangles(
+                            pos.x + phys.velocity.x * dt,
+                            pos.y + phys.velocity.y * dt,
+                            vao,
+                            trm.get_num_triangles(i),
+                        );
                     }
                 }
                 RENDER_TYPE_TEXT => {
                     if tcm.is_constructed(i) {
                         let vao = self.get_data_ref(i).vao_pri;
                         let pos = pcm.get_data_ref(i);
-                        gl.draw_text(pos.x, pos.y, vao, tcm.get_length(i));
+                        let phys = phcm.get_data_ref(i);
+                        gl.draw_text(
+                            pos.x + phys.velocity.x * dt,
+                            pos.y + phys.velocity.y * dt,
+                            vao,
+                            tcm.get_length(i),
+                        );
                     }
                 }
                 _ => (),

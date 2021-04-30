@@ -1,6 +1,6 @@
 use super::*;
 
-pub const ENTITY_SZ: usize = 32;
+pub const ENTITY_SZ: usize = 16;
 
 #[derive(Copy, Clone)]
 pub struct EntityIdSpan {

@@ -7,6 +7,9 @@ use crate::game::GameWrapper;
 use cache::CacheManager;
 use support::Gl;
 
+#[allow(unused_imports)]
+use rand;
+
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::EventLoop;
 use glutin::window::WindowBuilder;
@@ -19,6 +22,7 @@ struct CoreData {
     start_time: std::time::Instant,
     last_update: std::time::Instant,
     last_render: std::time::Instant,
+    last_physics: std::time::Instant,
     blown_update_frames: usize,
     blown_update_frames_expected: usize,
     blown_update_frames_significant: usize,
@@ -40,6 +44,7 @@ pub struct Core {
     cache: std::boxed::Box<CacheManager>,
     world: std::boxed::Box<ecs::World>,
     render_system: std::boxed::Box<ecs::RenderSystem>,
+    physics_system: std::boxed::Box<ecs::PhysicsSystem>,
 }
 
 impl Core {
@@ -53,6 +58,7 @@ impl Core {
 
         let windowed_context = ContextBuilder::new()
             .with_vsync(false)
+            .with_multisampling(2)
             .build_windowed(window, &el)
             .unwrap();
 
@@ -76,6 +82,7 @@ impl Core {
                 running: false,
                 last_update: start_time,
                 last_render: start_time,
+                last_physics: start_time,
                 initialized: false,
                 shutdown: false,
                 blown_update_frames: 0,
@@ -93,6 +100,7 @@ impl Core {
 
         let world = Box::new(ecs::World::new(&mut cache));
         let render_system = Box::new(ecs::RenderSystem::new(&mut cache, &gl));
+        let physics_system = Box::new(ecs::PhysicsSystem::new(&mut cache));
         let game = Box::new(GameWrapper::new(&mut cache));
 
         cache.print_loading();
@@ -105,6 +113,7 @@ impl Core {
             cache,
             world,
             render_system,
+            physics_system,
         }
     }
 
@@ -124,7 +133,7 @@ impl Core {
                 WindowEvent::CloseRequested => ret = false,
                 _ => (),
             },
-            Event::RedrawRequested(_) => self.render(),
+            Event::RedrawRequested(_) => self.render(std::time::Instant::now()),
             _ => (),
         }
         if ret {
@@ -158,9 +167,9 @@ impl Core {
         }
     }
 
-    fn render(&mut self) {
+    fn render(&mut self, start_time: std::time::Instant) {
         self.gl.clear_frame();
-        self.render_system.render(&self.gl, &self.world);
+        self.render_system.render(&self.gl, &self.world, start_time);
     }
 
     fn shutdown(&mut self) {
@@ -210,6 +219,7 @@ impl Core {
 
             // pre-update for lazy loading
             self.game.update(&mut self.world, 0);
+            self.physics_system.update(&mut self.world, 0);
             self.render_system.update(&self.gl, &mut self.world);
         }
 
@@ -245,6 +255,22 @@ impl Core {
 
             if 1 == cache.count_update_frames % 4 {
                 // priority 3 systems
+                expect_blown |= self.physics_system.update(&mut self.world, UPDATE_DT);
+                cache.last_physics = std::time::Instant::now();
+
+                /*if cfg!(debug_assertions) {
+                    // artificial jitter
+                    if rand::random::<f32>() < 0.01 {
+                        let now = std::time::Instant::now();
+                        let delta = (rand::random::<f32>() * 30.0) as u128;
+                        loop {
+                            if std::time::Instant::now().duration_since(now).as_millis() > delta {
+                                break;
+                            }
+                        }
+                        expect_blown = true;
+                    }
+                }*/
             }
 
             let delta = std::time::Instant::now()
@@ -272,7 +298,7 @@ impl Core {
             cache.last_render = std::time::Instant::now();
 
             // render frame
-            self.render();
+            self.render(cache.last_physics);
 
             let delta = std::time::Instant::now()
                 .duration_since(cache.last_render)

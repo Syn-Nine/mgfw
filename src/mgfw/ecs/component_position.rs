@@ -37,7 +37,7 @@ impl PositionComponentManager {
 
     pub fn get_position(&self, idx: usize) -> Position {
         let pos = self.get_data_ref(idx);
-        Position { x: pos.x, y: pos.y }
+        pos.clone()
     }
 
     pub fn get_data_ref_mut(&self, idx: usize) -> &mut Position {
