@@ -15,6 +15,19 @@ use glutin::event_loop::EventLoop;
 use glutin::window::WindowBuilder;
 use glutin::ContextBuilder;
 
+#[allow(dead_code)]
+pub fn rnd() -> f32 {
+    rand::random()
+}
+
+#[allow(dead_code)]
+const PI: f64 = 3.1415926535897932384626433;
+
+#[allow(dead_code)]
+pub fn deg2rad(val: f32) -> f32 {
+    val * PI as f32 / 180.0
+}
+
 struct CoreData {
     initialized: bool,
     running: bool,

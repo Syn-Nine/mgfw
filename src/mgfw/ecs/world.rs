@@ -7,9 +7,12 @@ pub struct World {
     // WARNING: Anything below this line is not in cache!
     ent: std::boxed::Box<EntityRegistry>,
     pcm: std::boxed::Box<PositionComponentManager>,
+    scm: std::boxed::Box<ScaleComponentManager>,
+    acm: std::boxed::Box<AngleComponentManager>,
     phcm: std::boxed::Box<PhysicsComponentManager>,
     rcm: std::boxed::Box<RenderComponentManager>,
     tcm: std::boxed::Box<TextRenderComponentManager>,
+    bbcm: std::boxed::Box<BillboardRenderComponentManager>,
     lcm: std::boxed::Box<LineRenderComponentManager>,
     trm: std::boxed::Box<TriangleRenderComponentManager>,
 }
@@ -21,9 +24,12 @@ impl World {
         World {
             ent: Box::new(EntityRegistry::new(cache)),
             pcm: Box::new(PositionComponentManager::new(cache)),
+            scm: Box::new(ScaleComponentManager::new(cache)),
+            acm: Box::new(AngleComponentManager::new(cache)),
             phcm: Box::new(PhysicsComponentManager::new(cache)),
             rcm: Box::new(RenderComponentManager::new(cache)),
             tcm: Box::new(TextRenderComponentManager::new(cache)),
+            bbcm: Box::new(BillboardRenderComponentManager::new(cache)),
             lcm: Box::new(LineRenderComponentManager::new(cache)),
             trm: Box::new(TriangleRenderComponentManager::new(cache)),
         }
@@ -35,6 +41,15 @@ impl World {
 
     pub fn entity_add_component(&mut self, idx: usize, component: u32) {
         self.ent.add_component(idx, component);
+    }
+
+    pub fn entity_get_angle(&mut self, idx: usize) -> f32 {
+        self.acm.get_angle(idx)
+    }
+
+    pub fn entity_set_angle(&mut self, idx: usize, angle: f32) {
+        self.acm.set_angle(idx, angle);
+        self.ent.add_component(idx, COMPONENT_ANGLE);
     }
 
     pub fn entity_get_position(&mut self, idx: usize) -> Position {
@@ -51,12 +66,35 @@ impl World {
         self.ent.add_component(idx, COMPONENT_POSITION);
     }
 
+    pub fn entity_get_scale(&mut self, idx: usize) -> Scale {
+        self.scm.get_scale(idx)
+    }
+
+    pub fn entity_set_scale(&mut self, idx: usize, pos: Scale) {
+        self.scm.set_scale(idx, pos.x, pos.y);
+        self.ent.add_component(idx, COMPONENT_SCALE);
+    }
+
+    pub fn entity_set_scale_xy(&mut self, idx: usize, x: f32, y: f32) {
+        self.scm.set_scale(idx, x, y);
+        self.ent.add_component(idx, COMPONENT_SCALE);
+    }
+
     pub fn entity_get_velocity(&mut self, idx: usize) -> Velocity {
         self.phcm.get_velocity(idx)
     }
 
     pub fn entity_get_acceleration(&mut self, idx: usize) -> Acceleration {
         self.phcm.get_acceleration(idx)
+    }
+
+    pub fn entity_get_angular_velocity(&mut self, idx: usize) -> f32 {
+        self.phcm.get_angular_velocity(idx)
+    }
+    pub fn entity_set_angular_velocity(&mut self, idx: usize, vel: f32) {
+        self.phcm.set_angular_velocity(idx, vel);
+        self.ent.add_component(idx, COMPONENT_ANGLE);
+        self.ent.add_component(idx, COMPONENT_PHYSICS);
     }
 
     pub fn entity_set_velocity(&mut self, idx: usize, vel: Velocity) {
@@ -87,6 +125,12 @@ impl World {
         self.tcm.set_text(idx, text);
         self.ent.add_component(idx, COMPONENT_RENDER);
         self.rcm.set_type(idx, RENDER_TYPE_TEXT);
+    }
+
+    pub fn entity_set_billboard(&mut self, idx: usize, image: String) {
+        self.bbcm.set_image(idx, image);
+        self.ent.add_component(idx, COMPONENT_RENDER);
+        self.rcm.set_type(idx, RENDER_TYPE_BILLBOARD);
     }
 
     pub fn entity_set_line_buffer(&mut self, idx: usize, pnts: &Vec<Position>, clrs: &Vec<Color>) {
@@ -130,8 +174,20 @@ impl World {
         &self.pcm
     }
 
+    pub fn get_manager_scale(&self) -> &ScaleComponentManager {
+        &self.scm
+    }
+
+    pub fn get_manager_angle(&self) -> &AngleComponentManager {
+        &self.acm
+    }
+
     pub fn get_manager_text(&self) -> &TextRenderComponentManager {
         &self.tcm
+    }
+
+    pub fn get_manager_billboard(&self) -> &BillboardRenderComponentManager {
+        &self.bbcm
     }
 
     pub fn get_manager_render(&self) -> &RenderComponentManager {
@@ -160,6 +216,10 @@ impl World {
 
     pub fn text_is_constructed(&self, idx: usize) -> bool {
         self.tcm.is_constructed(idx)
+    }
+
+    pub fn billboard_construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
+        self.bbcm.construct(idx, gl, vao, vbo);
     }
 
     pub fn line_buffer_construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
@@ -209,6 +269,13 @@ impl World {
                         let val = split[2].replace("\"", "");
                         self.ent.add_component(id, COMPONENT_ACTIVE);
                         self.entity_set_text(id, val);
+                    }
+                }
+                "billboard" => {
+                    if 3 == split.len() {
+                        let image = split[2];
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_billboard(id, String::from(image));
                     }
                 }
                 "linebuffer" => {
@@ -285,6 +352,31 @@ impl World {
                         let y = split[3].parse::<f32>().unwrap();
                         self.ent.add_component(id, COMPONENT_ACTIVE);
                         self.entity_set_velocity_xy(id, x, y);
+                    }
+                }
+                "scale" => {
+                    if 3 <= split.len() {
+                        let x = split[2].parse::<f32>().unwrap();
+                        let mut y = 1.0 as f32;
+                        if 4 == split.len() {
+                            y = split[3].parse::<f32>().unwrap();
+                        }
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_scale_xy(id, x, y);
+                    }
+                }
+                "angle" => {
+                    if 3 == split.len() {
+                        let angle = split[2].parse::<f32>().unwrap();
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_angle(id, crate::mgfw::deg2rad(angle));
+                    }
+                }
+                "angular_velocity" => {
+                    if 3 == split.len() {
+                        let avel = split[2].parse::<f32>().unwrap();
+                        self.ent.add_component(id, COMPONENT_ACTIVE);
+                        self.entity_set_angular_velocity(id, crate::mgfw::deg2rad(avel));
                     }
                 }
                 "acceleration" => {

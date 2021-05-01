@@ -4,6 +4,7 @@ pub const RENDER_TYPE_INVALID: u8 = 0;
 pub const RENDER_TYPE_TEXT: u8 = 1;
 pub const RENDER_TYPE_LINE_BUFFER: u8 = 2;
 pub const RENDER_TYPE_TRIANGLE_BUFFER: u8 = 3;
+pub const RENDER_TYPE_BILLBOARD: u8 = 4;
 
 struct RenderComponentManagerData {
     render_type: u8,

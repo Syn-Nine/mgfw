@@ -65,6 +65,9 @@ impl RenderSystem {
                 // priority 2
                 1 => {
                     expect_blown |= self.update_vbo(i, gl, world);
+                    if expect_blown {
+                        break;
+                    } // don't update VBOs every frame
                 }
                 _ => (),
             }
@@ -100,6 +103,13 @@ impl RenderSystem {
                     expect_blown = true;
                 }
             }
+            RENDER_TYPE_BILLBOARD => {
+                if world.get_manager_billboard().reconstruct(idx) {
+                    let dat = self.get_data_ref(idx);
+                    world.billboard_construct(idx, gl, dat.vao_pri, dat.vbo_pri);
+                    expect_blown = true;
+                }
+            }
             _ => (),
         }
         expect_blown
@@ -107,16 +117,30 @@ impl RenderSystem {
 
     pub fn render(&self, gl: &Gl, world: &World, start_time: std::time::Instant) {
         let pcm = world.get_manager_position();
+        let scm = world.get_manager_scale();
+        let acm = world.get_manager_angle();
         let phcm = world.get_manager_physics();
         let rcm = world.get_manager_render();
         let tcm = world.get_manager_text();
+        let bbcm = world.get_manager_billboard();
         let lcm = world.get_manager_line();
         let trm = world.get_manager_triangle();
+        let ent = world.get_entities();
 
-        let span = world.get_entities().get_id_span();
+        let span = ent.get_id_span();
         for i in span.first..=span.last {
             if self.skip_entity(i, world) {
                 continue;
+            }
+
+            let mut angle = 0.0 as f32;
+            if ent.has_component(i, COMPONENT_ANGLE) {
+                angle = acm.get_angle(i);
+            }
+
+            let mut scale = Scale { x: 1.0, y: 1.0 };
+            if ent.has_component(i, COMPONENT_SCALE) {
+                scale = scm.get_scale(i);
             }
 
             let dt = std::time::Instant::now()
@@ -133,6 +157,9 @@ impl RenderSystem {
                         gl.draw_lines(
                             pos.x + phys.velocity.x * dt,
                             pos.y + phys.velocity.y * dt,
+                            angle,
+                            scale.x,
+                            scale.y,
                             vao,
                             lcm.get_num_lines(i),
                         );
@@ -146,6 +173,9 @@ impl RenderSystem {
                         gl.draw_triangles(
                             pos.x + phys.velocity.x * dt,
                             pos.y + phys.velocity.y * dt,
+                            angle,
+                            scale.x,
+                            scale.y,
                             vao,
                             trm.get_num_triangles(i),
                         );
@@ -159,8 +189,27 @@ impl RenderSystem {
                         gl.draw_text(
                             pos.x + phys.velocity.x * dt,
                             pos.y + phys.velocity.y * dt,
+                            angle,
+                            scale.x,
+                            scale.y,
                             vao,
                             tcm.get_length(i),
+                        );
+                    }
+                }
+                RENDER_TYPE_BILLBOARD => {
+                    if bbcm.is_constructed(i) {
+                        let vao = self.get_data_ref(i).vao_pri;
+                        let pos = pcm.get_data_ref(i);
+                        let phys = phcm.get_data_ref(i);
+                        gl.draw_billboard(
+                            pos.x + phys.velocity.x * dt,
+                            pos.y + phys.velocity.y * dt,
+                            angle,
+                            scale.x,
+                            scale.y,
+                            vao,
+                            bbcm.get_tex_handle(i),
                         );
                     }
                 }

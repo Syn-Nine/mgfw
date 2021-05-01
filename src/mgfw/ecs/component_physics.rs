@@ -15,6 +15,7 @@ pub struct Acceleration {
 pub struct PhysicsComponentManagerData {
     pub velocity: Velocity,
     pub acceleration: Acceleration,
+    pub angular_velocity: f32,
 }
 
 pub struct PhysicsComponentManager {
@@ -32,6 +33,26 @@ impl PhysicsComponentManager {
         }
     }
 
+    pub fn get_velocity(&self, idx: usize) -> Velocity {
+        let data = self.get_data_ref(idx);
+        data.velocity.clone()
+    }
+
+    pub fn get_acceleration(&self, idx: usize) -> Acceleration {
+        let data = self.get_data_ref(idx);
+        data.acceleration.clone()
+    }
+
+    pub fn get_angular_velocity(&self, idx: usize) -> f32 {
+        let data = self.get_data_ref(idx);
+        data.angular_velocity
+    }
+
+    pub fn set_angular_velocity(&self, idx: usize, val: f32) {
+        let data = self.get_data_ref_mut(idx);
+        data.angular_velocity = val;
+    }
+
     pub fn set_velocity(&self, idx: usize, x: f32, y: f32) {
         let data = self.get_data_ref_mut(idx);
         data.velocity.x = x;
@@ -42,16 +63,6 @@ impl PhysicsComponentManager {
         let data = self.get_data_ref_mut(idx);
         data.acceleration.x = x;
         data.acceleration.y = y;
-    }
-
-    pub fn get_velocity(&self, idx: usize) -> Velocity {
-        let data = self.get_data_ref(idx);
-        data.velocity.clone()
-    }
-
-    pub fn get_acceleration(&self, idx: usize) -> Acceleration {
-        let data = self.get_data_ref(idx);
-        data.acceleration.clone()
     }
 
     pub fn get_data_ref_mut(&self, idx: usize) -> &mut PhysicsComponentManagerData {

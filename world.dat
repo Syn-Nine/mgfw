@@ -4,12 +4,27 @@
 0,position,100,100
 0,velocity,0.0,0.0
 0,acceleration,0.0,0.0
+0,angle,5.0
+0,scale,1.5,1.0
 1,text,"heap data: init"
 1,position,0.0,0.0
 1,visible,true
+1,scale,1.0,2.0
 2,linebuffer,-80,-50,1.0,0.0,0.0,1.0,-80,50,0.0,1.0,0.0,1.0,-80,50,0.0,1.0,0.0,1.0,80,50,0.0,0.0,1.0,1.0,80,50,0.0,0.0,1.0,1.0,80,-50,1.0,1.0,1.0,0.5,80,-50,1.0,1.0,1.0,0.5,-80,-50,1.0,0.0,0.0,1.0
 2,visible,true
 2,position,160,100
 3,tribuffer,-20,-20,1.0,0.0,0.0,0.9,-20,20,0.0,1.0,0.0,0.9,20,20,0.0,0.0,1.0,0.9,-20,-20,1.0,0.0,0.0,0.9,20,20,0.0,0.0,1.0,0.9,20,-20,1.0,1.0,1.0,0.9
 3,visible,true
 3,position,160,100
+3,angle,0
+3,angular_velocity,16.0
+3,scale,1.0,1.0
+4,billboard,base.png
+4,position,160,100
+4,scale,120,120
+4,visible,true
+4,angular_velocity,32.0
+5,billboard,top.png
+5,position,160,100
+5,scale,120,120
+5,visible,true

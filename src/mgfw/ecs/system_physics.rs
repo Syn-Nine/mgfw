@@ -33,6 +33,7 @@ impl PhysicsSystem {
         let data = self.get_data_ref_mut();
         let ent = world.get_entities();
         let pcm = world.get_manager_position();
+        let acm = world.get_manager_angle();
         let phcm = world.get_manager_physics();
 
         let span = ent.get_id_span();
@@ -57,6 +58,12 @@ impl PhysicsSystem {
 
                     pcm.set_position(i, pos.x, pos.y);
                     phcm.set_velocity(i, vel.x, vel.y);
+
+                    let avel = phcm.get_angular_velocity(i);
+                    let mut ang = acm.get_angle(i);
+
+                    ang += avel * dt;
+                    acm.set_angle(i, ang);
                 }
 
                 // priority 2

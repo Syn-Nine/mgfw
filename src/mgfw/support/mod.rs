@@ -15,7 +15,8 @@ pub struct Gl {
     font_shader: Shader,
     line_shader: Shader,
     poly_shader: Shader,
-    tex: u32,
+    tex_shader: Shader,
+    texture: Texture,
     xres: f32,
     yres: f32,
 }
@@ -49,6 +50,10 @@ impl Gl {
         }
     }*/
 
+    pub fn load_texture(&self, image: &String) -> u32 {
+        Texture::new(&self.gl, image).handle
+    }
+
     pub fn buffer_font_data(
         &self,
         vao: u32,
@@ -79,6 +84,39 @@ impl Gl {
             self.gl.EnableVertexAttribArray(self.font_shader.attrib_uv);
             self.gl.VertexAttribPointer(
                 self.font_shader.attrib_uv,
+                2,
+                gl::FLOAT,
+                0,
+                4 * std::mem::size_of::<f32>() as gl::types::GLsizei,
+                (2 * std::mem::size_of::<f32>()) as *const () as *const _,
+            );
+        }
+    }
+
+    pub fn buffer_billboard_data(&self, vao: u32, vbo: u32, data_ptr: *const std::ffi::c_void) {
+        unsafe {
+            self.gl.BindVertexArray(vao);
+            self.gl.BindBuffer(gl::ARRAY_BUFFER, vbo);
+            self.gl.BufferData(
+                gl::ARRAY_BUFFER,
+                (2 * 3 * 4 * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
+                data_ptr,
+                gl::STATIC_DRAW,
+            );
+
+            self.gl.EnableVertexAttribArray(self.tex_shader.attrib_pos);
+            self.gl.VertexAttribPointer(
+                self.tex_shader.attrib_pos,
+                2,
+                gl::FLOAT,
+                0,
+                4 * std::mem::size_of::<f32>() as gl::types::GLsizei,
+                std::ptr::null(),
+            );
+
+            self.gl.EnableVertexAttribArray(self.tex_shader.attrib_uv);
+            self.gl.VertexAttribPointer(
+                self.tex_shader.attrib_uv,
                 2,
                 gl::FLOAT,
                 0,
@@ -169,6 +207,59 @@ impl Gl {
     }
 }
 
+struct Texture {
+    handle: u32,
+}
+
+impl Texture {
+    pub fn new(gl: &gl::Gl, image: &String) -> Texture {
+        unsafe {
+            // Construct a new RGB ImageBuffer with the specified width and height.
+            let img: image::RgbaImage = image::open(image).unwrap().to_rgba8();
+
+            let mut tex: u32 = 0;
+            gl.GenTextures(1, &mut tex);
+            gl.BindTexture(gl::TEXTURE_2D, tex);
+            let tw = img.dimensions().0 as gl::types::GLsizei;
+            let th = img.dimensions().1 as gl::types::GLsizei;
+            gl.TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA as gl::types::GLint,
+                tw,
+                th,
+                0,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                img.into_raw().as_ptr() as *const _,
+            );
+
+            gl.TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_MIN_FILTER,
+                gl::LINEAR as gl::types::GLint,
+            );
+            gl.TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_MAG_FILTER,
+                gl::LINEAR as gl::types::GLint,
+            );
+            gl.TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_WRAP_S,
+                gl::REPEAT as gl::types::GLint,
+            );
+            gl.TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_WRAP_T,
+                gl::REPEAT as gl::types::GLint,
+            );
+
+            Texture { handle: tex }
+        }
+    }
+}
+
 struct Shader {
     program: u32,
     pub attrib_pos: gl::types::GLuint,
@@ -239,6 +330,9 @@ pub fn load(gl_context: &glutin::Context<PossiblyCurrent>, xres: i32, yres: i32)
     let line_shader = Shader::new(&gl, line_shader::VS_SRC, line_shader::FS_SRC);
     let poly_shader = Shader::new(&gl, poly_shader::VS_SRC, poly_shader::FS_SRC);
     let font_shader = Shader::new(&gl, tex_shader::VS_SRC, tex_shader::FS_SRC);
+    let tex_shader = Shader::new(&gl, tex_shader::VS_SRC, tex_shader::FS_SRC);
+
+    let texture = Texture::new(&gl, &String::from("retro_gaming_0.png"));
 
     unsafe {
         let color = [0.05, 0.05, 0.06, 1.0];
@@ -248,55 +342,13 @@ pub fn load(gl_context: &glutin::Context<PossiblyCurrent>, xres: i32, yres: i32)
         gl.Enable(gl::MULTISAMPLE);
         gl.Enable(gl::LINE_SMOOTH);
 
-        //---------------------------------------------------------------------
-
-        // Construct a new RGB ImageBuffer with the specified width and height.
-        let img: image::RgbaImage = image::open("retro_gaming_0.png").unwrap().to_rgba8();
-
-        let mut tex: u32 = 0;
-        gl.GenTextures(1, &mut tex);
-        gl.BindTexture(gl::TEXTURE_2D, tex);
-        let tw = img.dimensions().0 as gl::types::GLsizei;
-        let th = img.dimensions().1 as gl::types::GLsizei;
-        gl.TexImage2D(
-            gl::TEXTURE_2D,
-            0,
-            gl::RGBA as gl::types::GLint,
-            tw,
-            th,
-            0,
-            gl::RGBA,
-            gl::UNSIGNED_BYTE,
-            img.into_raw().as_ptr() as *const _,
-        );
-
-        gl.TexParameteri(
-            gl::TEXTURE_2D,
-            gl::TEXTURE_MIN_FILTER,
-            gl::LINEAR as gl::types::GLint,
-        );
-        gl.TexParameteri(
-            gl::TEXTURE_2D,
-            gl::TEXTURE_MAG_FILTER,
-            gl::LINEAR as gl::types::GLint,
-        );
-        gl.TexParameteri(
-            gl::TEXTURE_2D,
-            gl::TEXTURE_WRAP_S,
-            gl::REPEAT as gl::types::GLint,
-        );
-        gl.TexParameteri(
-            gl::TEXTURE_2D,
-            gl::TEXTURE_WRAP_T,
-            gl::REPEAT as gl::types::GLint,
-        );
-
         Gl {
             gl,
             font_shader,
             line_shader,
             poly_shader,
-            tex,
+            tex_shader,
+            texture,
             xres: xres as f32,
             yres: yres as f32,
         }
@@ -310,18 +362,24 @@ impl Gl {
         }
     }
 
-    pub fn draw_text(&self, x: f32, y: f32, vao: u32, count: usize) {
+    pub fn draw_text(&self, x: f32, y: f32, angle: f32, sx: f32, sy: f32, vao: u32, count: usize) {
         self.font_shader.use_program(&self.gl);
 
         unsafe {
             self.gl.ActiveTexture(gl::TEXTURE0);
-            self.gl.BindTexture(gl::TEXTURE_2D, self.tex);
+            self.gl.BindTexture(gl::TEXTURE_2D, self.texture.handle);
             self.gl.Uniform1i(self.font_shader.uniform_tex_sampler, 0);
 
             self.gl.BindVertexArray(vao);
             let mvp = self.get_mvp();
 
             let mat = Matrix4::from_translation(Vector3::new(x, y, 0.0));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_angle_z(cgmath::Rad(angle));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_nonuniform_scale(sx, sy, 1.0);
             let mvp = mvp * mat;
 
             self.gl.UniformMatrix4fv(
@@ -337,7 +395,40 @@ impl Gl {
         }
     }
 
-    pub fn draw_lines(&self, x: f32, y: f32, vao: u32, count: usize) {
+    pub fn draw_billboard(&self, x: f32, y: f32, angle: f32, sx: f32, sy: f32, vao: u32, tex: u32) {
+        self.tex_shader.use_program(&self.gl);
+
+        unsafe {
+            self.gl.ActiveTexture(gl::TEXTURE0);
+            self.gl.BindTexture(gl::TEXTURE_2D, tex);
+            self.gl.Uniform1i(self.tex_shader.uniform_tex_sampler, 0);
+
+            self.gl.BindVertexArray(vao);
+            let mvp = self.get_mvp();
+
+            let mat = Matrix4::from_translation(Vector3::new(x, y, 0.0));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_angle_z(cgmath::Rad(angle));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_nonuniform_scale(sx, sy, 1.0);
+            let mvp = mvp * mat;
+
+            self.gl.UniformMatrix4fv(
+                self.tex_shader.uniform_mvp,
+                1,
+                gl::FALSE,
+                mvp.as_ptr() as *const _,
+            );
+
+            self.gl.DrawArrays(gl::TRIANGLES, 0, 6 as i32);
+
+            self.gl.BindVertexArray(0);
+        }
+    }
+
+    pub fn draw_lines(&self, x: f32, y: f32, angle: f32, sx: f32, sy: f32, vao: u32, count: usize) {
         self.line_shader.use_program(&self.gl);
 
         unsafe {
@@ -345,6 +436,12 @@ impl Gl {
             let mvp = self.get_mvp();
 
             let mat = Matrix4::from_translation(Vector3::new(x, y, 0.0));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_angle_z(cgmath::Rad(angle));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_nonuniform_scale(sx, sy, 1.0);
             let mvp = mvp * mat;
 
             self.gl.UniformMatrix4fv(
@@ -360,7 +457,16 @@ impl Gl {
         }
     }
 
-    pub fn draw_triangles(&self, x: f32, y: f32, vao: u32, count: usize) {
+    pub fn draw_triangles(
+        &self,
+        x: f32,
+        y: f32,
+        angle: f32,
+        sx: f32,
+        sy: f32,
+        vao: u32,
+        count: usize,
+    ) {
         self.poly_shader.use_program(&self.gl);
 
         unsafe {
@@ -368,6 +474,12 @@ impl Gl {
             let mvp = self.get_mvp();
 
             let mat = Matrix4::from_translation(Vector3::new(x, y, 0.0));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_angle_z(cgmath::Rad(angle));
+            let mvp = mvp * mat;
+
+            let mat = Matrix4::from_nonuniform_scale(sx, sy, 1.0);
             let mvp = mvp * mat;
 
             self.gl.UniformMatrix4fv(

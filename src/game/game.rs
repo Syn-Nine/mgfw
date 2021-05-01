@@ -32,18 +32,21 @@ pub fn update(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgfw::e
 
     cache.frame = (cache.frame + 1) % 128;
 
+    let xres = 320.0;
+    let yres = 200.0;
+
     // Amortize workload
     if 0 == cache.frame % 8 {
-        let w = world.text_get_width(cache.id) as f32;
+        let w = world.text_get_width(cache.id) as f32 * 1.5;
         if 0.0 < w {
             let pos = world.entity_get_position(cache.id);
             let mut del = world.entity_get_velocity(cache.id);
 
-            if (0.0 > del.y && 0.0 > pos.y) || (0.0 < del.y && 200.0 - 14.0 < pos.y) {
+            if (0.0 > del.y && 0.0 > pos.y) || (0.0 < del.y && yres - 14.0 < pos.y) {
                 del.y = -del.y;
             }
 
-            if (0.0 > del.x && 0.0 > pos.x) || (0.0 < del.x && 320.0 - w < pos.x) {
+            if (0.0 > del.x && 0.0 > pos.x) || (0.0 < del.x && xres - w < pos.x) {
                 del.x = -del.x;
             }
             
@@ -53,11 +56,11 @@ pub fn update(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgfw::e
         let pos = world.entity_get_position(cache.pid);
         let mut del = world.entity_get_velocity(cache.pid);
 
-        if (0.0 > del.y && 0.0 + 20.0 > pos.y) || (0.0 < del.y && 200.0 - 20.0 < pos.y) {
+        if (0.0 > del.y && 0.0 + 20.0 > pos.y) || (0.0 < del.y && yres - 20.0 < pos.y) {
             del.y = -del.y;
         }
 
-        if (0.0 > del.x && 0.0 + 20.0 > pos.x) || (0.0 < del.x && 320.0 - 20.0 < pos.x) {
+        if (0.0 > del.x && 0.0 + 20.0 > pos.x) || (0.0 < del.x && xres - 20.0 < pos.x) {
             del.x = -del.x;
         }
         
