@@ -27,7 +27,7 @@ pub fn initialize(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgf
 }
 
 #[rustfmt::skip]
-pub fn update(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgfw::ecs::World, _micros: u128) -> bool {
+pub fn update(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgfw::ecs::World) -> bool {
     let mut expect_blown = false;
 
     cache.frame = (cache.frame + 1) % 128;

@@ -22,12 +22,11 @@ impl GameWrapper {
         game::initialize(self.get_cache_ref_mut(), self.get_heap_ref_mut(), world);
     }
 
-    pub fn update(&mut self, world: &mut mgfw::ecs::World, micros: u128) -> bool {
+    pub fn update(&mut self, world: &mut mgfw::ecs::World, _micros: u128) -> bool {
         game::update(
             self.get_cache_ref_mut(),
             self.get_heap_ref_mut(),
-            world,
-            micros,
+            world
         )
     }
 

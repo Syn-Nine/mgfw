@@ -24,7 +24,12 @@
 4,scale,120,120
 4,visible,true
 4,angular_velocity,32.0
-5,billboard,top.png
-5,position,160,100
+5,billboard,top-a.png
+5,position,160,104
 5,scale,120,120
 5,visible,true
+5,angular_velocity,-128.0
+6,billboard,top-b.png
+6,position,160,100
+6,scale,120,120
+6,visible,true
