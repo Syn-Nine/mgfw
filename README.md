@@ -23,6 +23,9 @@ Placeholder for tutorials on building simple common games.
 ### Games
 Placeholder for information and links to mini games that use this framework.
 
+### Future Work
+Placeholder for list of desired future features.
+
 ### Support Crates
 MGFW uses the following crates for direct feature support:
 - gl
