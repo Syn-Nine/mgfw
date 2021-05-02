@@ -8,7 +8,7 @@ MGFW supports the following high level features:
 - 1200 Hz Simulation Executive Clock
 - 60 Hz Render Clock
 - 150 Hz Physics Euler Integrator
-- Dedicated Continuous Cache Block for Game State
+- Dedicated Continuous Cache Block for game state
 - OpenGL rendering for Lines, Polygons, and Texture Billboards
 - Built-in Bitmap Font
 - Mouse, Keyboard, and Gamepad event handling
