@@ -1,6 +1,6 @@
 # mgfw
 ## Rust Mini Game Framework
-MGFW is a batteries-included framework written in Rust for rapid prototyping of game concepts and algorithms, but still be featureful and flexible to use as a starting point for larger, more complete games.
+MGFW is a batteries-included framework written in Rust for rapid prototyping of game concepts and algorithms yet still featureful and flexible to use as a starting point for larger, more complete games.
 
 ### Features
 MGFW supports the following high level features:
