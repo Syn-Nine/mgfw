@@ -10,8 +10,9 @@ use support::Gl;
 #[allow(unused_imports)]
 use rand;
 
-use glutin::event::{Event, WindowEvent};
+use glutin::event::{ElementState, Event, MouseButton, WindowEvent};
 use glutin::event_loop::EventLoop;
+use glutin::window::Icon;
 use glutin::window::WindowBuilder;
 use glutin::ContextBuilder;
 
@@ -45,6 +46,8 @@ struct CoreData {
     completed_first_frame: bool,
     update_frame_load: f64,
     render_frame_load: f64,
+    mouse_x: i32,
+    mouse_y: i32,
 }
 
 #[allow(dead_code)]
@@ -64,9 +67,18 @@ impl Core {
     pub fn new(title: &str, xres: i32, yres: i32, el: &EventLoop<()>) -> Core {
         println!("Constructing MGFW Core");
 
+        // Construct a new RGB ImageBuffer with the specified width and height.
+        let icon: image::RgbaImage = image::open("mgfw_64_trim.ico").unwrap().to_rgba8();
+        let w = icon.dimensions().0 as u32;
+        let h = icon.dimensions().1 as u32;
+        let b = Some(Icon::from_rgba(icon.into_vec(), w, h).unwrap());
+
+        // img.into_raw().as_ptr() as *const _,
+
         let window = WindowBuilder::new()
             .with_title(title)
             .with_resizable(false)
+            .with_window_icon(b)
             .with_inner_size(glutin::dpi::LogicalSize::new(xres, yres));
 
         let windowed_context = ContextBuilder::new()
@@ -108,6 +120,8 @@ impl Core {
                 start_time,
                 update_frame_load: 0.0,
                 render_frame_load: 0.0,
+                mouse_x: 0,
+                mouse_y: 0,
             };
         }
 
@@ -144,11 +158,18 @@ impl Core {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::Resized(physical_size) => self.windowed_context.resize(*physical_size),
                 WindowEvent::CloseRequested => ret = false,
+                WindowEvent::CursorMoved { position, .. } => {
+                    self.update_mouse_xy(position.x as i32, position.y as i32);
+                }
+                WindowEvent::MouseInput { state, button, .. } => {
+                    self.update_mouse_button(button, state);
+                }
                 _ => (),
             },
             Event::RedrawRequested(_) => self.render(std::time::Instant::now()),
             _ => (),
         }
+
         if ret {
             self.update();
         } else {
@@ -157,6 +178,24 @@ impl Core {
             }
         }
         ret
+    }
+
+    fn update_mouse_xy(&mut self, x: i32, y: i32) {
+        let cache = unsafe { &mut *(self.data.offset(0)) };
+        cache.mouse_x = x;
+        cache.mouse_y = y;
+    }
+
+    fn update_mouse_button(
+        &mut self,
+        button: &glutin::event::MouseButton,
+        state: &glutin::event::ElementState,
+    ) {
+        let cache = unsafe { &mut *(self.data.offset(0)) };
+
+        if MouseButton::Left == *button && ElementState::Released == *state {
+            println!("mouse clicked at {}, {}", cache.mouse_x, cache.mouse_y);
+        }
     }
 
     fn initialize(&mut self) {
@@ -192,11 +231,11 @@ impl Core {
 
         if 0 < cache.blown_update_frames_significant {
             println!(
-                "WARNING: {} sig blown Update frames. Total: {} ({}%). Expected ({}%)",
-                cache.blown_update_frames_significant,
+                "Blown Update frames: Total: {}, Sig: {} ({}%), Expected: ({}%)",
                 cache.blown_update_frames,
-                (cache.blown_update_frames as f32 * 100.0 / cache.count_update_frames as f32)
-                    as i32,
+                cache.blown_update_frames_significant,
+                (cache.blown_update_frames_significant as f32 * 100.0
+                    / cache.blown_update_frames as f32) as i32,
                 (cache.blown_update_frames_expected as f32 * 100.0
                     / cache.blown_update_frames as f32) as i32
             );

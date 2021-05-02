@@ -39,7 +39,6 @@ impl RenderSystem {
         let ent = world.get_entities();
         let rcm = world.get_manager_render();
         if !ent.is_active(idx)
-            || !ent.is_visible(idx)
             || !ent.has_component(idx, COMPONENT_RENDER)
             || rcm.has_type(idx, RENDER_TYPE_INVALID)
         {
@@ -129,7 +128,7 @@ impl RenderSystem {
 
         let span = ent.get_id_span();
         for i in span.first..=span.last {
-            if self.skip_entity(i, world) {
+            if !ent.is_visible(i) || self.skip_entity(i, world) {
                 continue;
             }
 

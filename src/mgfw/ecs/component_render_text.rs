@@ -55,6 +55,24 @@ impl TextRenderComponentManager {
         self.get_data_ref(idx).reconstruct_needed
     }
 
+    // potential cache miss
+    fn recalc_width(&self, idx: usize) {
+        let cache_data = self.get_data_ref_mut(idx);
+
+        let bytes = self.data[idx].text.as_bytes();
+        let mut basex: f32 = 0.0;
+
+        for i in 0..bytes.len() {
+            let idx = bytes[i] as u16;
+            let data = self.font.data[&idx];
+            let advance = data[6] as f32;
+            basex += advance;
+        }
+
+        cache_data.width = basex as usize;
+    }
+
+    // probable cache miss
     pub fn construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
         let cache_data = self.get_data_ref_mut(idx);
 
@@ -132,6 +150,9 @@ impl TextRenderComponentManager {
     }
 
     pub fn get_width(&self, idx: usize) -> usize {
+        if self.reconstruct(idx) { // force recalc if hasn't happened on its own yet
+            self.recalc_width(idx);
+        } 
         self.get_data_ref(idx).width
     }
 

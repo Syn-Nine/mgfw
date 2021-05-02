@@ -43,6 +43,9 @@ impl EntityRegistry {
             self.cursor = (self.cursor + 1) % ENTITY_SZ; // wrap around
         }
 
+        if self.has_component(self.cursor, COMPONENT_ACTIVE) {
+            println!("WARNING: EntityRegistry: Ran out of available entity slots!");
+        }
         assert!(!self.has_component(self.cursor, COMPONENT_ACTIVE)); // make sure we actually found an open slot
         self.add_component(self.cursor, COMPONENT_ACTIVE); // set to used
         self.cursor

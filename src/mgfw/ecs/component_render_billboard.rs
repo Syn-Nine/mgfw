@@ -12,6 +12,7 @@ pub struct BillboardRenderComponentManager {
     cache_data: *mut BillboardRenderComponentManagerData,
     // WARNING: Anything below this line is not in cache!
     texture_files: std::boxed::Box<HashMap<usize, String>>,
+    texture_handles: std::boxed::Box<HashMap<String, u32>>,
 }
 
 #[allow(dead_code)]
@@ -19,14 +20,16 @@ impl BillboardRenderComponentManager {
     pub fn new(mgr: &mut CacheManager) -> BillboardRenderComponentManager {
         println!("Constructing BillboardRenderComponentManager");
 
-        let data: HashMap<usize, String> = HashMap::new();
+        let fdata: HashMap<usize, String> = HashMap::new();
+        let hdata: HashMap<String, u32> = HashMap::new();
 
         // allocate system memory in cache
         let sz_bytes = std::mem::size_of::<BillboardRenderComponentManagerData>() * ENTITY_SZ;
         let cache_data = mgr.allocate(sz_bytes) as *mut BillboardRenderComponentManagerData;
 
         BillboardRenderComponentManager {
-            texture_files: Box::new(data),
+            texture_files: Box::new(fdata),
+            texture_handles: Box::new(hdata),
             cache_data,
         }
     }
@@ -46,12 +49,20 @@ impl BillboardRenderComponentManager {
         self.get_data_ref(idx).reconstruct_needed
     }
 
-    pub fn construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
-        let cache_data = self.get_data_ref_mut(idx);
+    pub fn construct(&mut self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
+        if self.get_data_ref(idx).load_image_needed {
+            let filename = self.texture_files.get(&idx).unwrap().to_string();
+            let handle: u32 = match self.texture_handles.contains_key(&filename) {
+                true => *self.texture_handles.get(&filename).unwrap(),
+                false => {
+                    let h = gl.load_texture(&filename);
+                    self.texture_handles.insert(filename, h);
+                    h
+                }
+            };
 
-        if cache_data.load_image_needed {
-            cache_data.texture = gl.load_texture(&self.texture_files.get(&idx).unwrap());
-            cache_data.load_image_needed = false;
+            self.get_data_ref_mut(idx).texture = handle;
+            self.get_data_ref_mut(idx).load_image_needed = false;
         }
 
         let mut vertex_data: Vec<f32> = Vec::new();
@@ -85,6 +96,7 @@ impl BillboardRenderComponentManager {
         let data_ptr = vertex_data.as_ptr() as *const _;
         gl.buffer_billboard_data(vao, vbo, data_ptr);
 
+        let cache_data = self.get_data_ref_mut(idx);
         cache_data.reconstruct_needed = false;
         cache_data.constructed = true;
     }

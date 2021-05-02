@@ -215,6 +215,7 @@ impl Texture {
     pub fn new(gl: &gl::Gl, image: &String) -> Texture {
         unsafe {
             // Construct a new RGB ImageBuffer with the specified width and height.
+            println!("Texture: Loading '{}'", image);
             let img: image::RgbaImage = image::open(image).unwrap().to_rgba8();
 
             let mut tex: u32 = 0;

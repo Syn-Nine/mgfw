@@ -218,7 +218,11 @@ impl World {
         self.tcm.is_constructed(idx)
     }
 
-    pub fn billboard_construct(&self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
+    pub fn text_reconstruct(&self, idx: usize) -> bool {
+        self.tcm.reconstruct(idx)
+    }
+
+    pub fn billboard_construct(&mut self, idx: usize, gl: &Gl, vao: u32, vbo: u32) {
         self.bbcm.construct(idx, gl, vao, vbo);
     }
 
