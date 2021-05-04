@@ -11,7 +11,7 @@ MGFW supports the following high level features:
 - Dedicated Continuous Cache Block for game state
 - OpenGL rendering for Lines, Polygons, and Texture Billboards
 - Built-in Bitmap Font
-- Mouse, Keyboard, and Gamepad event handling
+- Mouse event handling (Keyboard and Gamepad in work)
 - Performance Monitoring and Reporting
 
 ### Documentation
