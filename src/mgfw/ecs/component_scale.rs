@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Scale {
@@ -14,7 +15,7 @@ pub struct ScaleComponentManager {
 #[allow(dead_code)]
 impl ScaleComponentManager {
     pub fn new(mgr: &mut CacheManager) -> ScaleComponentManager {
-        println!("Constructing ScaleComponentManager");
+        log(format!("Constructing ScaleComponentManager"));
         let sz_bytes = std::mem::size_of::<Scale>() * ENTITY_SZ;
         ScaleComponentManager {
             data: mgr.allocate(sz_bytes) as *mut Scale,

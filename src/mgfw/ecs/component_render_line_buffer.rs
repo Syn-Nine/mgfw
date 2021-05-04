@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 struct LineBuffer {
     // WARNING: Anything below this line is not in cache!
@@ -21,7 +22,7 @@ pub struct LineRenderComponentManager {
 #[allow(dead_code)]
 impl LineRenderComponentManager {
     pub fn new(mgr: &mut CacheManager) -> LineRenderComponentManager {
-        println!("Constructing LineRenderComponentManager");
+        log(format!("Constructing LineRenderComponentManager"));
 
         let mut data: Vec<LineBuffer> = Vec::new();
         for _i in 0..ENTITY_SZ {

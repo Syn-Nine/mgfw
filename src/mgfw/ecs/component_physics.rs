@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Velocity {
@@ -26,7 +27,7 @@ pub struct PhysicsComponentManager {
 #[allow(dead_code)]
 impl PhysicsComponentManager {
     pub fn new(mgr: &mut CacheManager) -> PhysicsComponentManager {
-        println!("Constructing PhysicsComponentManager");
+        log(format!("Constructing PhysicsComponentManager"));
         let sz_bytes = std::mem::size_of::<PhysicsComponentManagerData>() * ENTITY_SZ;
         PhysicsComponentManager {
             data: mgr.allocate(sz_bytes) as *mut PhysicsComponentManagerData,

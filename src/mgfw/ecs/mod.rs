@@ -1,4 +1,5 @@
 pub mod component_angle;
+pub mod component_color;
 pub mod component_physics;
 pub mod component_position;
 pub mod component_render;
@@ -16,6 +17,7 @@ use entity::*;
 pub use world::*;
 
 pub use component_angle::*;
+pub use component_color::*;
 pub use component_physics::*;
 pub use component_position::*;
 use component_render::*;
@@ -39,3 +41,4 @@ pub const COMPONENT_VISIBLE: u32 = 1 << 3;
 pub const COMPONENT_PHYSICS: u32 = 1 << 4;
 pub const COMPONENT_ANGLE: u32 = 1 << 5;
 pub const COMPONENT_SCALE: u32 = 1 << 6;
+pub const COMPONENT_COLOR: u32 = 1 << 7;

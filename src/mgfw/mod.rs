@@ -5,6 +5,7 @@ mod support;
 
 use crate::game::GameWrapper;
 use cache::CacheManager;
+use std::collections::VecDeque;
 use support::Gl;
 
 #[allow(unused_imports)]
@@ -46,9 +47,12 @@ struct CoreData {
     completed_first_frame: bool,
     update_frame_load: f64,
     render_frame_load: f64,
-    mouse_x: i32,
-    mouse_y: i32,
+    scale_factor: f64,
 }
+
+#[allow(dead_code)]
+pub const EVENT_INVALID: u8 = 0;
+pub const EVENT_INPUT_MOUSE_BUTTON_UP: u8 = 1;
 
 #[allow(dead_code)]
 pub struct Core {
@@ -61,14 +65,15 @@ pub struct Core {
     world: std::boxed::Box<ecs::World>,
     render_system: std::boxed::Box<ecs::RenderSystem>,
     physics_system: std::boxed::Box<ecs::PhysicsSystem>,
+    events: std::boxed::Box<VecDeque<u8>>,
 }
 
 impl Core {
     pub fn new(title: &str, xres: i32, yres: i32, el: &EventLoop<()>) -> Core {
-        println!("Constructing MGFW Core");
+        log(format!("Constructing MGFW Core"));
 
         // Construct a new RGB ImageBuffer with the specified width and height.
-        let icon: image::RgbaImage = image::open("mgfw_64_trim.ico").unwrap().to_rgba8();
+        let icon: image::RgbaImage = image::open("assets/mgfw_64_trim.ico").unwrap().to_rgba8();
         let w = icon.dimensions().0 as u32;
         let h = icon.dimensions().1 as u32;
         let b = Some(Icon::from_rgba(icon.into_vec(), w, h).unwrap());
@@ -88,6 +93,8 @@ impl Core {
             .unwrap();
 
         let windowed_context = unsafe { windowed_context.make_current().unwrap() };
+
+        let scale_factor = windowed_context.window().scale_factor();
 
         let start_time = std::time::Instant::now();
 
@@ -120,8 +127,7 @@ impl Core {
                 start_time,
                 update_frame_load: 0.0,
                 render_frame_load: 0.0,
-                mouse_x: 0,
-                mouse_y: 0,
+                scale_factor,
             };
         }
 
@@ -129,6 +135,7 @@ impl Core {
         let render_system = Box::new(ecs::RenderSystem::new(&mut cache, &gl));
         let physics_system = Box::new(ecs::PhysicsSystem::new(&mut cache));
         let game = Box::new(GameWrapper::new(&mut cache));
+        let events = Box::new(VecDeque::new());
 
         cache.print_loading();
 
@@ -141,6 +148,7 @@ impl Core {
             world,
             render_system,
             physics_system,
+            events,
         }
     }
 
@@ -152,14 +160,20 @@ impl Core {
         }
 
         let mut ret = true;
-        //println!("{:?}", event);
+        //log(format!("{:?}", event);
         match event {
             Event::LoopDestroyed => ret = false,
             Event::WindowEvent { event, .. } => match event {
+                WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                    cache.scale_factor = *scale_factor;
+                }
                 WindowEvent::Resized(physical_size) => self.windowed_context.resize(*physical_size),
                 WindowEvent::CloseRequested => ret = false,
                 WindowEvent::CursorMoved { position, .. } => {
-                    self.update_mouse_xy(position.x as i32, position.y as i32);
+                    self.update_mouse_xy(
+                        (position.x / cache.scale_factor) as i32,
+                        (position.y / cache.scale_factor) as i32,
+                    );
                 }
                 WindowEvent::MouseInput { state, button, .. } => {
                     self.update_mouse_button(button, state);
@@ -181,9 +195,8 @@ impl Core {
     }
 
     fn update_mouse_xy(&mut self, x: i32, y: i32) {
-        let cache = unsafe { &mut *(self.data.offset(0)) };
-        cache.mouse_x = x;
-        cache.mouse_y = y;
+        self.world.mouse_x = x;
+        self.world.mouse_y = y;
     }
 
     fn update_mouse_button(
@@ -191,10 +204,12 @@ impl Core {
         button: &glutin::event::MouseButton,
         state: &glutin::event::ElementState,
     ) {
-        let cache = unsafe { &mut *(self.data.offset(0)) };
-
+        //let cache = unsafe { &mut *(self.data.offset(0)) };
         if MouseButton::Left == *button && ElementState::Released == *state {
-            println!("mouse clicked at {}, {}", cache.mouse_x, cache.mouse_y);
+            //log(format!("mouse clicked at {}, {}", cache.mouse_x, cache.mouse_y);
+
+            // insert message into the input FIFO
+            self.events.push_back(EVENT_INPUT_MOUSE_BUTTON_UP);
         }
     }
 
@@ -208,14 +223,14 @@ impl Core {
             .as_micros() as f32
             / 1000.0;
 
-        println!("Initialization Complete {:.2} ms", ms);
+        log(format!("Initialization Complete {:.2} ms", ms));
 
         const INIT_LIMIT: f32 = 1000.0;
         if ms > INIT_LIMIT {
-            println!(
+            log(format!(
                 "WARNING: blown Initilization time limit ({:} ms)",
                 INIT_LIMIT
-            );
+            ));
         }
     }
 
@@ -230,7 +245,7 @@ impl Core {
         self.game.shutdown();
 
         if 0 < cache.blown_update_frames_significant {
-            println!(
+            log(format!(
                 "Blown Update frames: Total: {}, Sig: {} ({}%), Expected: ({}%)",
                 cache.blown_update_frames,
                 cache.blown_update_frames_significant,
@@ -238,26 +253,26 @@ impl Core {
                     / cache.blown_update_frames as f32) as i32,
                 (cache.blown_update_frames_expected as f32 * 100.0
                     / cache.blown_update_frames as f32) as i32
-            );
+            ));
         }
 
         if 10 < cache.blown_render_frames {
-            println!(
+            log(format!(
                 "WARNING: {} blown Render frames ({}%)",
                 cache.blown_render_frames,
                 (cache.blown_render_frames as f32 * 100.0 / cache.count_render_frames as f32)
                     as i32
-            );
+            ));
         }
 
-        println!(
+        log(format!(
             "Avg Update frame loading: {}%",
             (cache.update_frame_load * 100.0 / cache.count_render_frames as f64) as i32
-        );
-        println!(
+        ));
+        log(format!(
             "Avg Render frame loading: {}%",
             (cache.render_frame_load * 100.0 / cache.count_render_frames as f64) as i32
-        );
+        ));
         cache.shutdown = true;
     }
 
@@ -309,6 +324,10 @@ impl Core {
                 // priority 3 systems
                 expect_blown |= self.physics_system.update(&mut self.world, UPDATE_DT);
                 cache.last_physics = std::time::Instant::now();
+
+                if let Some(val) = self.events.pop_front() {
+                    expect_blown |= self.game.event(&mut self.world, val);
+                }
 
                 /*if cfg!(debug_assertions) {
                     // artificial jitter
@@ -370,16 +389,22 @@ impl Core {
                     .as_micros() as f32
                     / 1000.0;
 
-                println!("Time to first Render frame: {:.2} ms", ms);
+                log(format!("Time to first Render frame: {:.2} ms", ms));
 
                 const FIRST_FRAME_LIMIT: f32 = 4000.0;
                 if ms > FIRST_FRAME_LIMIT {
-                    println!(
+                    log(format!(
                         "WARNING: blown time to first Render frame limit ({} ms)",
                         FIRST_FRAME_LIMIT
-                    );
+                    ));
                 }
             }
         }
+    }
+}
+
+pub fn log(output: String) {
+    if cfg!(debug_assertions) {
+        println!("{}", output);
     }
 }

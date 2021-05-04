@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 pub const RENDER_TYPE_INVALID: u8 = 0;
 pub const RENDER_TYPE_TEXT: u8 = 1;
@@ -18,7 +19,7 @@ pub struct RenderComponentManager {
 #[allow(dead_code)]
 impl RenderComponentManager {
     pub fn new(mgr: &mut CacheManager) -> RenderComponentManager {
-        println!("Constructing RenderComponentManager");
+        log(format!("Constructing RenderComponentManager"));
         // allocate system memory in cache
         let sz_bytes = std::mem::size_of::<RenderComponentManagerData>() * ENTITY_SZ;
         let data = mgr.allocate(sz_bytes) as *mut RenderComponentManagerData;

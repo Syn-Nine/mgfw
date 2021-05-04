@@ -31,9 +31,10 @@ pub const FS_SRC: &'static [u8] = b"
 precision mediump float;
 
 varying vec4 v_color;
+uniform vec4 color_uniform;
 
 void main() {
-    gl_FragColor = v_color;
+    gl_FragColor = v_color * color_uniform;
 }
 
 \0";

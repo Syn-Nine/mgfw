@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 use std::collections::HashMap;
 
 struct BillboardRenderComponentManagerData {
@@ -18,7 +19,7 @@ pub struct BillboardRenderComponentManager {
 #[allow(dead_code)]
 impl BillboardRenderComponentManager {
     pub fn new(mgr: &mut CacheManager) -> BillboardRenderComponentManager {
-        println!("Constructing BillboardRenderComponentManager");
+        log(format!("Constructing BillboardRenderComponentManager"));
 
         let fdata: HashMap<usize, String> = HashMap::new();
         let hdata: HashMap<String, u32> = HashMap::new();

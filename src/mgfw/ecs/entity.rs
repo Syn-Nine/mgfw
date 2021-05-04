@@ -1,6 +1,7 @@
 use super::*;
+use crate::mgfw::log;
 
-pub const ENTITY_SZ: usize = 8;
+pub const ENTITY_SZ: usize = 48;
 
 #[derive(Copy, Clone)]
 pub struct EntityIdSpan {
@@ -22,7 +23,7 @@ pub struct EntityRegistry {
 #[allow(dead_code)]
 impl EntityRegistry {
     pub fn new(mgr: &mut CacheManager) -> EntityRegistry {
-        println!("Constructing EntityRegistry");
+        log(format!("Constructing EntityRegistry"));
         let sz_bytes = std::mem::size_of::<Entity>() * ENTITY_SZ;
         EntityRegistry {
             data: mgr.allocate(sz_bytes) as *mut Entity,
@@ -44,7 +45,9 @@ impl EntityRegistry {
         }
 
         if self.has_component(self.cursor, COMPONENT_ACTIVE) {
-            println!("WARNING: EntityRegistry: Ran out of available entity slots!");
+            log(format!(
+                "WARNING: EntityRegistry: Ran out of available entity slots!"
+            ));
         }
         assert!(!self.has_component(self.cursor, COMPONENT_ACTIVE)); // make sure we actually found an open slot
         self.add_component(self.cursor, COMPONENT_ACTIVE); // set to used

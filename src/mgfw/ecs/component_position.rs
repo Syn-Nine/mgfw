@@ -1,17 +1,10 @@
 use super::*;
+use crate::mgfw::log;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Position {
     pub x: f32,
     pub y: f32,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-    pub a: f32,
 }
 
 pub struct PositionComponentManager {
@@ -22,7 +15,7 @@ pub struct PositionComponentManager {
 #[allow(dead_code)]
 impl PositionComponentManager {
     pub fn new(mgr: &mut CacheManager) -> PositionComponentManager {
-        println!("Constructing PositionComponentManager");
+        log(format!("Constructing PositionComponentManager"));
         let sz_bytes = std::mem::size_of::<Position>() * ENTITY_SZ;
         PositionComponentManager {
             data: mgr.allocate(sz_bytes) as *mut Position,

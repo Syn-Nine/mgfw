@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 struct TriangleBuffer {
     // WARNING: Anything below this line is not in cache!
@@ -21,7 +22,7 @@ pub struct TriangleRenderComponentManager {
 #[allow(dead_code)]
 impl TriangleRenderComponentManager {
     pub fn new(mgr: &mut CacheManager) -> TriangleRenderComponentManager {
-        println!("Constructing TriangleRenderComponentManager");
+        log(format!("Constructing TriangleRenderComponentManager"));
 
         let mut data: Vec<TriangleBuffer> = Vec::new();
         for _i in 0..ENTITY_SZ {

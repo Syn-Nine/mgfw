@@ -2,6 +2,7 @@ mod line_shader;
 mod poly_shader;
 mod tex_shader;
 
+use super::log;
 use cgmath::*;
 use glutin::{self, PossiblyCurrent};
 
@@ -215,7 +216,7 @@ impl Texture {
     pub fn new(gl: &gl::Gl, image: &String) -> Texture {
         unsafe {
             // Construct a new RGB ImageBuffer with the specified width and height.
-            println!("Texture: Loading '{}'", image);
+            log(format!("Texture: Loading '{}'", image));
             let img: image::RgbaImage = image::open(image).unwrap().to_rgba8();
 
             let mut tex: u32 = 0;
@@ -268,6 +269,7 @@ struct Shader {
     pub attrib_uv: gl::types::GLuint,
     pub uniform_tex_sampler: gl::types::GLint,
     pub uniform_mvp: gl::types::GLint,
+    pub uniform_color: gl::types::GLint,
 }
 
 impl Shader {
@@ -307,6 +309,9 @@ impl Shader {
                 gl.GetUniformLocation(program, b"tex_sampler\0".as_ptr() as *const _);
             let uniform_mvp = gl.GetUniformLocation(program, b"MVP\0".as_ptr() as *const _);
 
+            let uniform_color =
+                gl.GetUniformLocation(program, b"color_uniform\0".as_ptr() as *const _);
+
             Shader {
                 program,
                 attrib_pos,
@@ -314,6 +319,7 @@ impl Shader {
                 attrib_uv,
                 uniform_tex_sampler,
                 uniform_mvp,
+                uniform_color,
             }
         }
     }
@@ -333,7 +339,7 @@ pub fn load(gl_context: &glutin::Context<PossiblyCurrent>, xres: i32, yres: i32)
     let font_shader = Shader::new(&gl, tex_shader::VS_SRC, tex_shader::FS_SRC);
     let tex_shader = Shader::new(&gl, tex_shader::VS_SRC, tex_shader::FS_SRC);
 
-    let texture = Texture::new(&gl, &String::from("retro_gaming_0.png"));
+    let texture = Texture::new(&gl, &String::from("assets/retro_gaming_0.png"));
 
     unsafe {
         let color = [0.05, 0.05, 0.06, 1.0];
@@ -363,13 +369,30 @@ impl Gl {
         }
     }
 
-    pub fn draw_text(&self, x: f32, y: f32, angle: f32, sx: f32, sy: f32, vao: u32, count: usize) {
+    pub fn draw_text(
+        &self,
+        x: f32,
+        y: f32,
+        angle: f32,
+        sx: f32,
+        sy: f32,
+        vao: u32,
+        count: usize,
+        color: super::ecs::Color,
+    ) {
         self.font_shader.use_program(&self.gl);
 
         unsafe {
             self.gl.ActiveTexture(gl::TEXTURE0);
             self.gl.BindTexture(gl::TEXTURE_2D, self.texture.handle);
             self.gl.Uniform1i(self.font_shader.uniform_tex_sampler, 0);
+            self.gl.Uniform4f(
+                self.font_shader.uniform_color,
+                color.r,
+                color.g,
+                color.b,
+                color.a,
+            );
 
             self.gl.BindVertexArray(vao);
             let mvp = self.get_mvp();
@@ -396,13 +419,30 @@ impl Gl {
         }
     }
 
-    pub fn draw_billboard(&self, x: f32, y: f32, angle: f32, sx: f32, sy: f32, vao: u32, tex: u32) {
+    pub fn draw_billboard(
+        &self,
+        x: f32,
+        y: f32,
+        angle: f32,
+        sx: f32,
+        sy: f32,
+        vao: u32,
+        tex: u32,
+        color: super::ecs::Color,
+    ) {
         self.tex_shader.use_program(&self.gl);
 
         unsafe {
             self.gl.ActiveTexture(gl::TEXTURE0);
             self.gl.BindTexture(gl::TEXTURE_2D, tex);
             self.gl.Uniform1i(self.tex_shader.uniform_tex_sampler, 0);
+            self.gl.Uniform4f(
+                self.tex_shader.uniform_color,
+                color.r,
+                color.g,
+                color.b,
+                color.a,
+            );
 
             self.gl.BindVertexArray(vao);
             let mvp = self.get_mvp();
@@ -429,10 +469,28 @@ impl Gl {
         }
     }
 
-    pub fn draw_lines(&self, x: f32, y: f32, angle: f32, sx: f32, sy: f32, vao: u32, count: usize) {
+    pub fn draw_lines(
+        &self,
+        x: f32,
+        y: f32,
+        angle: f32,
+        sx: f32,
+        sy: f32,
+        vao: u32,
+        count: usize,
+        color: super::ecs::Color,
+    ) {
         self.line_shader.use_program(&self.gl);
 
         unsafe {
+            self.gl.Uniform4f(
+                self.line_shader.uniform_color,
+                color.r,
+                color.g,
+                color.b,
+                color.a,
+            );
+
             self.gl.BindVertexArray(vao);
             let mvp = self.get_mvp();
 
@@ -467,10 +525,19 @@ impl Gl {
         sy: f32,
         vao: u32,
         count: usize,
+        color: super::ecs::Color,
     ) {
         self.poly_shader.use_program(&self.gl);
 
         unsafe {
+            self.gl.Uniform4f(
+                self.poly_shader.uniform_color,
+                color.r,
+                color.g,
+                color.b,
+                color.a,
+            );
+
             self.gl.BindVertexArray(vao);
             let mvp = self.get_mvp();
 

@@ -1,4 +1,6 @@
-const CACHE_SZ: usize = 4 * 1024;
+const CACHE_SZ: usize = 8 * 1024;
+
+use super::log;
 
 struct CacheManagerHeader {
     start: usize,
@@ -13,7 +15,7 @@ pub struct CacheManager {
 #[allow(dead_code)]
 impl CacheManager {
     pub fn new() -> CacheManager {
-        println!("Constructing CacheManager");
+        log(format!("Constructing CacheManager"));
         let mut data = Box::new([0; CACHE_SZ]);
         let header = unsafe { &mut *(data.as_mut_ptr().offset(0) as *mut CacheManagerHeader) };
         header.start = std::mem::size_of::<CacheManagerHeader>();
@@ -33,15 +35,15 @@ impl CacheManager {
 
             let ret = self.data.as_mut_ptr().offset(header.start as isize) as *mut u8;
             header.start += sz_bytes;
-            println!("CacheManager: Allocated {} bytes", sz_bytes);
+            log(format!("CacheManager: Allocated {} bytes", sz_bytes));
 
             header.loading = (header.start as f32 * 100.0 / CACHE_SZ as f32) as i32;
             const LOAD_LIMIT_PERCENT: i32 = 80;
             if LOAD_LIMIT_PERCENT < header.loading {
-                println!(
+                log(format!(
                     "WARNING: Cache Loading ({}%) exceeds Load Limit ({}%)",
                     header.loading, LOAD_LIMIT_PERCENT
-                );
+                ));
             }
 
             ret
@@ -50,6 +52,6 @@ impl CacheManager {
 
     pub fn print_loading(&mut self) {
         let header = unsafe { &*(self.data.as_ptr().offset(0) as *const CacheManagerHeader) };
-        println!("Cache Loading: {}%", header.loading);
+        log(format!("Cache Loading: {}%", header.loading));
     }
 }

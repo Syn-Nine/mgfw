@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 struct PhysicsSystemData {
     frame: usize,
@@ -12,7 +13,7 @@ pub struct PhysicsSystem {
 #[allow(dead_code)]
 impl PhysicsSystem {
     pub fn new(mgr: &mut CacheManager) -> PhysicsSystem {
-        println!("Constructing PhysicsSystem");
+        log(format!("Constructing PhysicsSystem"));
         // allocate system memory in cache
         let sz_bytes = std::mem::size_of::<PhysicsSystemData>();
         let data = mgr.allocate(sz_bytes) as *mut PhysicsSystemData;

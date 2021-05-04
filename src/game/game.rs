@@ -17,7 +17,7 @@ pub struct GameData {
 #[rustfmt::skip]
 pub fn initialize(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgfw::ecs::World) {
 
-    world.parse_world("world.dat");
+    world.parse_world("assets/world.dat");
     cache.id = 0;
     cache.hpid = 1;
     cache.pid = 3;
@@ -76,6 +76,11 @@ pub fn update(cache: &mut GameData, heap: &mut GameDataHeap, world: &mut mgfw::e
 }
 
 #[rustfmt::skip]
+pub fn event(cache: &mut GameData, _heap: &mut GameDataHeap, world: &mut mgfw::ecs::World, event_id: u8) -> bool {
+    // noop
+    false
+}
+
 pub fn shutdown(cache: &mut GameData, _heap: &mut GameDataHeap) {
     // re-box and consume to deallocate memory
     let _temp = unsafe { Box::from_raw(cache.heap) };

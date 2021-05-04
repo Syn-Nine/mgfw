@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 struct Text {
     // WARNING: Anything below this line is not in cache!
@@ -22,7 +23,7 @@ pub struct TextRenderComponentManager {
 #[allow(dead_code)]
 impl TextRenderComponentManager {
     pub fn new(mgr: &mut CacheManager) -> TextRenderComponentManager {
-        println!("Constructing TextRenderComponentManager");
+        log(format!("Constructing TextRenderComponentManager"));
 
         let mut data: Vec<Text> = Vec::new();
         for _i in 0..ENTITY_SZ {
@@ -150,9 +151,10 @@ impl TextRenderComponentManager {
     }
 
     pub fn get_width(&self, idx: usize) -> usize {
-        if self.reconstruct(idx) { // force recalc if hasn't happened on its own yet
+        if self.reconstruct(idx) {
+            // force recalc if hasn't happened on its own yet
             self.recalc_width(idx);
-        } 
+        }
         self.get_data_ref(idx).width
     }
 

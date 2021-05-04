@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Angle {
@@ -13,7 +14,7 @@ pub struct AngleComponentManager {
 #[allow(dead_code)]
 impl AngleComponentManager {
     pub fn new(mgr: &mut CacheManager) -> AngleComponentManager {
-        println!("Constructing AngleComponentManager");
+        log(format!("Constructing AngleComponentManager"));
         let sz_bytes = std::mem::size_of::<Angle>() * ENTITY_SZ;
         AngleComponentManager {
             data: mgr.allocate(sz_bytes) as *mut Angle,

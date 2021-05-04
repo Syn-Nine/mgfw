@@ -1,6 +1,7 @@
 mod game;
 
 use crate::mgfw;
+use crate::mgfw::*;
 
 pub struct GameWrapper {
     data: *mut game::GameData,
@@ -10,7 +11,7 @@ pub struct GameWrapper {
 impl GameWrapper {
     #[rustfmt::skip]
     pub fn new(mgr: &mut mgfw::cache::CacheManager) -> GameWrapper {
-        println!("Constructing Game");
+        log(format!("Constructing Game"));
         let data = mgr.allocate(std::mem::size_of::<game::GameData>()) as *mut game::GameData;
         let cache: &mut game::GameData = unsafe { &mut *(data.offset(0)) };
         cache.heap = Box::into_raw(Box::new(game::GameDataHeap::default()));
@@ -18,7 +19,7 @@ impl GameWrapper {
     }
 
     pub fn initialize(&mut self, world: &mut mgfw::ecs::World) {
-        println!("Initializing Game");
+        log(format!("Initializing Game"));
         game::initialize(self.get_cache_ref_mut(), self.get_heap_ref_mut(), world);
     }
 
@@ -26,8 +27,17 @@ impl GameWrapper {
         game::update(self.get_cache_ref_mut(), self.get_heap_ref_mut(), world)
     }
 
+    pub fn event(&mut self, world: &mut mgfw::ecs::World, event_id: u8) -> bool {
+        game::event(
+            self.get_cache_ref_mut(),
+            self.get_heap_ref_mut(),
+            world,
+            event_id,
+        )
+    }
+
     pub fn shutdown(&mut self) {
-        println!("Shutdown Game");
+        log(format!("Shutdown Game"));
         game::shutdown(self.get_cache_ref_mut(), self.get_heap_ref_mut());
     }
 

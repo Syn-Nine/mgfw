@@ -1,3 +1,4 @@
+use crate::mgfw::log;
 use std::fs::File;
 use std::io::{self, BufRead};
 
@@ -15,12 +16,15 @@ pub struct World {
     bbcm: std::boxed::Box<BillboardRenderComponentManager>,
     lcm: std::boxed::Box<LineRenderComponentManager>,
     trm: std::boxed::Box<TriangleRenderComponentManager>,
+    ccm: std::boxed::Box<ColorComponentManager>,
+    pub mouse_x: i32,
+    pub mouse_y: i32,
 }
 
 #[allow(dead_code)]
 impl World {
     pub fn new(cache: &mut CacheManager) -> World {
-        println!("Constructing World");
+        log(format!("Constructing World"));
         World {
             ent: Box::new(EntityRegistry::new(cache)),
             pcm: Box::new(PositionComponentManager::new(cache)),
@@ -32,6 +36,9 @@ impl World {
             bbcm: Box::new(BillboardRenderComponentManager::new(cache)),
             lcm: Box::new(LineRenderComponentManager::new(cache)),
             trm: Box::new(TriangleRenderComponentManager::new(cache)),
+            ccm: Box::new(ColorComponentManager::new(cache)),
+            mouse_x: 0,
+            mouse_y: 0,
         }
     }
 
@@ -52,6 +59,28 @@ impl World {
         self.ent.add_component(idx, COMPONENT_ANGLE);
     }
 
+    pub fn entity_set_color(&mut self, idx: usize, color: Color) {
+        self.ccm.set_color(idx, color);
+        self.ent.add_component(idx, COMPONENT_COLOR);
+    }
+
+    pub fn entity_set_color_rgba(&mut self, idx: usize, r: f32, g: f32, b: f32, a: f32) {
+        self.ccm.set_color_rgba(idx, r, g, b, a);
+        self.ent.add_component(idx, COMPONENT_COLOR);
+    }
+
+    pub fn entity_get_color(&self, idx: usize) -> Color {
+        self.ccm.get_color(idx)
+    }
+
+    pub fn entity_set_alpha(&mut self, idx: usize, alpha: f32) {
+        self.ccm.set_alpha(idx, alpha);
+        self.ent.add_component(idx, COMPONENT_COLOR);
+    }
+
+    pub fn entity_get_alpha(&self, idx: usize) -> f32 {
+        self.ccm.get_alpha(idx)
+    }
     pub fn entity_get_position(&mut self, idx: usize) -> Position {
         self.pcm.get_position(idx)
     }
@@ -206,6 +235,10 @@ impl World {
         &self.trm
     }
 
+    pub fn get_manager_color(&self) -> &ColorComponentManager {
+        &self.ccm
+    }
+
     pub fn text_get_width(&self, idx: usize) -> usize {
         self.tcm.get_width(idx)
     }
@@ -235,7 +268,7 @@ impl World {
     }
 
     pub fn parse_world(&mut self, filename: &str) {
-        println!("World: Parsing '{}'", filename);
+        log(format!("World: Parsing '{}'", filename));
 
         let file = File::open(filename).unwrap();
         let reader = io::BufReader::new(file);
@@ -253,7 +286,7 @@ impl World {
                 continue;
             }
 
-            //println!("{:?}", line);
+            //log(format!("{:?}", line));
 
             let split: Vec<&str> = line.split(',').collect();
             if 1 > split.len() {
@@ -374,6 +407,13 @@ impl World {
                         let angle = split[2].parse::<f32>().unwrap();
                         self.ent.add_component(id, COMPONENT_ACTIVE);
                         self.entity_set_angle(id, crate::mgfw::deg2rad(angle));
+                    }
+                }
+                "alpha" => {
+                    if 3 == split.len() {
+                        let alpha = split[2].parse::<f32>().unwrap();
+                        self.ent.add_component(id, COMPONENT_COLOR);
+                        self.entity_set_alpha(id, alpha);
                     }
                 }
                 "angular_velocity" => {

@@ -1,4 +1,5 @@
 use super::*;
+use crate::mgfw::log;
 
 struct RenderSystemData {
     vao_pri: u32,
@@ -16,7 +17,7 @@ pub struct RenderSystem {
 #[allow(dead_code)]
 impl RenderSystem {
     pub fn new(mgr: &mut CacheManager, gl: &Gl) -> RenderSystem {
-        println!("Constructing RenderSystem");
+        log(format!("Constructing RenderSystem"));
         // allocate system memory in cache
         let sz_bytes = std::mem::size_of::<RenderSystemData>() * ENTITY_SZ;
         let data = mgr.allocate(sz_bytes) as *mut RenderSystemData;
@@ -131,6 +132,7 @@ impl RenderSystem {
             if !ent.is_visible(i) || self.skip_entity(i, world) {
                 continue;
             }
+            let color = world.entity_get_color(i);
 
             let mut angle = 0.0 as f32;
             if ent.has_component(i, COMPONENT_ANGLE) {
@@ -161,6 +163,7 @@ impl RenderSystem {
                             scale.y,
                             vao,
                             lcm.get_num_lines(i),
+                            color,
                         );
                     }
                 }
@@ -177,6 +180,7 @@ impl RenderSystem {
                             scale.y,
                             vao,
                             trm.get_num_triangles(i),
+                            color,
                         );
                     }
                 }
@@ -193,6 +197,7 @@ impl RenderSystem {
                             scale.y,
                             vao,
                             tcm.get_length(i),
+                            color,
                         );
                     }
                 }
@@ -209,6 +214,7 @@ impl RenderSystem {
                             scale.y,
                             vao,
                             bbcm.get_tex_handle(i),
+                            color,
                         );
                     }
                 }
