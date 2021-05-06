@@ -47,7 +47,7 @@ impl PhysicsSystem {
             match data.frame % 2 {
                 // priority 1
                 0 => {
-                    let dt = micros as f32 * 1.0e-6 * 8.0; // 150hz
+                    let dt = micros as f32 * 1.0e-6 * 2.0; // 150hz
                     let accel = phcm.get_acceleration(i);
                     let mut vel = phcm.get_velocity(i);
                     let mut pos = pcm.get_position(i);

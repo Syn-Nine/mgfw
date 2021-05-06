@@ -427,14 +427,14 @@ impl Gl {
         sx: f32,
         sy: f32,
         vao: u32,
-        tex: u32,
+        tex: u16,
         color: super::ecs::Color,
     ) {
         self.tex_shader.use_program(&self.gl);
 
         unsafe {
             self.gl.ActiveTexture(gl::TEXTURE0);
-            self.gl.BindTexture(gl::TEXTURE_2D, tex);
+            self.gl.BindTexture(gl::TEXTURE_2D, tex as u32);
             self.gl.Uniform1i(self.tex_shader.uniform_tex_sampler, 0);
             self.gl.Uniform4f(
                 self.tex_shader.uniform_color,

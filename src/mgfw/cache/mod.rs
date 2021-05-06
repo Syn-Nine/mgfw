@@ -31,6 +31,11 @@ impl CacheManager {
     pub fn allocate(&mut self, sz_bytes: usize) -> *mut u8 {
         unsafe {
             let header = &mut *(self.data.as_mut_ptr().offset(0) as *mut CacheManagerHeader);
+            if !(header.start + sz_bytes <= CACHE_SZ) {
+                log(format!(
+                    "WARNING: Attempting to allocate cache past size limit"
+                ));
+            }
             assert!(header.start + sz_bytes <= CACHE_SZ);
 
             let ret = self.data.as_mut_ptr().offset(header.start as isize) as *mut u8;

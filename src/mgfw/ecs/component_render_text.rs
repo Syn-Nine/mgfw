@@ -7,10 +7,10 @@ struct Text {
 }
 
 struct TextRenderComponentManagerData {
+    width: u16,
     num_chars: u16,
     constructed: bool,
     reconstruct_needed: bool,
-    width: usize,
 }
 
 pub struct TextRenderComponentManager {
@@ -70,7 +70,7 @@ impl TextRenderComponentManager {
             basex += advance;
         }
 
-        cache_data.width = basex as usize;
+        cache_data.width = basex as u16;
     }
 
     // probable cache miss
@@ -143,7 +143,7 @@ impl TextRenderComponentManager {
         cache_data.reconstruct_needed = false;
         cache_data.constructed = true;
         cache_data.num_chars = num_chars as u16;
-        cache_data.width = basex as usize;
+        cache_data.width = basex as u16;
     }
 
     pub fn get_length(&self, idx: usize) -> usize {
@@ -155,7 +155,7 @@ impl TextRenderComponentManager {
             // force recalc if hasn't happened on its own yet
             self.recalc_width(idx);
         }
-        self.get_data_ref(idx).width
+        self.get_data_ref(idx).width as usize
     }
 
     fn get_data_ref_mut(&self, idx: usize) -> &mut TextRenderComponentManagerData {

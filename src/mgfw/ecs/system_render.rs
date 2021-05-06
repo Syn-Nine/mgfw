@@ -3,9 +3,7 @@ use crate::mgfw::log;
 
 struct RenderSystemData {
     vao_pri: u32,
-    vao_alt: u32, // not yet used
     vbo_pri: u32,
-    vbo_alt: u32, // not yet used
 }
 
 pub struct RenderSystem {
@@ -28,11 +26,8 @@ impl RenderSystem {
         for i in 0..ENTITY_SZ {
             let d = ret.get_data_ref_mut(i);
             d.vao_pri = gl.gen_vao();
-            d.vao_alt = gl.gen_vao();
             d.vbo_pri = gl.gen_vbo();
-            d.vbo_alt = gl.gen_vbo();
         }
-
         ret
     }
 
@@ -185,7 +180,7 @@ impl RenderSystem {
                     }
                 }
                 RENDER_TYPE_TEXT => {
-                    if tcm.is_constructed(i) {
+                    if tcm.is_constructed(i) && !tcm.reconstruct(i) {
                         let vao = self.get_data_ref(i).vao_pri;
                         let pos = pcm.get_data_ref(i);
                         let phys = phcm.get_data_ref(i);

@@ -17,6 +17,7 @@ pub struct World {
     lcm: std::boxed::Box<LineRenderComponentManager>,
     trm: std::boxed::Box<TriangleRenderComponentManager>,
     ccm: std::boxed::Box<ColorComponentManager>,
+    ecm: std::boxed::Box<EasingComponentManager>,
     pub mouse_x: i32,
     pub mouse_y: i32,
 }
@@ -37,6 +38,7 @@ impl World {
             lcm: Box::new(LineRenderComponentManager::new(cache)),
             trm: Box::new(TriangleRenderComponentManager::new(cache)),
             ccm: Box::new(ColorComponentManager::new(cache)),
+            ecm: Box::new(EasingComponentManager::new(cache)),
             mouse_x: 0,
             mouse_y: 0,
         }
@@ -75,6 +77,12 @@ impl World {
 
     pub fn entity_set_alpha(&mut self, idx: usize, alpha: f32) {
         self.ccm.set_alpha(idx, alpha);
+        self.ent.add_component(idx, COMPONENT_COLOR);
+    }
+
+    pub fn entity_set_alpha_ease(&mut self, idx: usize, start: f32, end: f32, dt: f32) {
+        self.entity_set_alpha(idx, start);
+        self.ecm.set_alpha_ease(idx, start, end, dt);
         self.ent.add_component(idx, COMPONENT_COLOR);
     }
 
@@ -199,6 +207,8 @@ impl World {
         &self.ent
     }
 
+    // Managers should not be mutable! Use interface functions instead.
+
     pub fn get_manager_position(&self) -> &PositionComponentManager {
         &self.pcm
     }
@@ -237,6 +247,14 @@ impl World {
 
     pub fn get_manager_color(&self) -> &ColorComponentManager {
         &self.ccm
+    }
+
+    pub fn get_manager_easing(&self) -> &EasingComponentManager {
+        &self.ecm
+    }
+
+    pub fn easing_disable(&mut self, idx: usize) {
+        self.ecm.deactivate(idx);
     }
 
     pub fn text_get_width(&self, idx: usize) -> usize {

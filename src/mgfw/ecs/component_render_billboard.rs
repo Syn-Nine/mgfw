@@ -3,10 +3,10 @@ use crate::mgfw::log;
 use std::collections::HashMap;
 
 struct BillboardRenderComponentManagerData {
+    texture: u16,
     constructed: bool,
     reconstruct_needed: bool,
     load_image_needed: bool,
-    texture: u32,
 }
 
 pub struct BillboardRenderComponentManager {
@@ -62,7 +62,7 @@ impl BillboardRenderComponentManager {
                 }
             };
 
-            self.get_data_ref_mut(idx).texture = handle;
+            self.get_data_ref_mut(idx).texture = handle as u16;
             self.get_data_ref_mut(idx).load_image_needed = false;
         }
 
@@ -102,7 +102,7 @@ impl BillboardRenderComponentManager {
         cache_data.constructed = true;
     }
 
-    pub fn get_tex_handle(&self, idx: usize) -> u32 {
+    pub fn get_tex_handle(&self, idx: usize) -> u16 {
         self.get_data_ref(idx).texture
     }
 

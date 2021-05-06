@@ -65,6 +65,7 @@ pub struct Core {
     world: std::boxed::Box<ecs::World>,
     render_system: std::boxed::Box<ecs::RenderSystem>,
     physics_system: std::boxed::Box<ecs::PhysicsSystem>,
+    easing_system: std::boxed::Box<ecs::EasingSystem>,
     events: std::boxed::Box<VecDeque<u8>>,
 }
 
@@ -134,6 +135,7 @@ impl Core {
         let world = Box::new(ecs::World::new(&mut cache));
         let render_system = Box::new(ecs::RenderSystem::new(&mut cache, &gl));
         let physics_system = Box::new(ecs::PhysicsSystem::new(&mut cache));
+        let easing_system = Box::new(ecs::EasingSystem::new(&mut cache));
         let game = Box::new(GameWrapper::new(&mut cache));
         let events = Box::new(VecDeque::new());
 
@@ -148,6 +150,7 @@ impl Core {
             world,
             render_system,
             physics_system,
+            easing_system,
             events,
         }
     }
@@ -288,6 +291,7 @@ impl Core {
             self.game.update(&mut self.world, 0);
             self.physics_system.update(&mut self.world, 0);
             self.render_system.update(&self.gl, &mut self.world);
+            self.easing_system.update(&mut self.world, 0);
         }
 
         // inner update loop
@@ -322,12 +326,14 @@ impl Core {
 
             if 1 == cache.count_update_frames % 4 {
                 // priority 3 systems
-                expect_blown |= self.physics_system.update(&mut self.world, UPDATE_DT);
+                expect_blown |= self.physics_system.update(&mut self.world, UPDATE_DT * 4);
                 cache.last_physics = std::time::Instant::now();
 
                 if let Some(val) = self.events.pop_front() {
                     expect_blown |= self.game.event(&mut self.world, val);
                 }
+
+                expect_blown |= self.easing_system.update(&mut self.world, UPDATE_DT * 4);
 
                 /*if cfg!(debug_assertions) {
                     // artificial jitter

@@ -1,7 +1,7 @@
 use super::*;
 use crate::mgfw::log;
 
-pub const ENTITY_SZ: usize = 48;
+pub const ENTITY_SZ: usize = 48; // limit to 256
 
 #[derive(Copy, Clone)]
 pub struct EntityIdSpan {
@@ -48,8 +48,8 @@ impl EntityRegistry {
             log(format!(
                 "WARNING: EntityRegistry: Ran out of available entity slots!"
             ));
+            assert!(false); // make sure we actually found an open slot
         }
-        assert!(!self.has_component(self.cursor, COMPONENT_ACTIVE)); // make sure we actually found an open slot
         self.add_component(self.cursor, COMPONENT_ACTIVE); // set to used
         self.cursor
     }
