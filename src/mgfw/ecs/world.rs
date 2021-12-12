@@ -170,6 +170,10 @@ impl World {
         self.rcm.set_type(idx, RENDER_TYPE_BILLBOARD);
     }
 
+    pub fn entity_get_billboard(&self, idx: usize) -> String {
+        self.bbcm.get_image(idx)
+    }
+
     pub fn entity_set_line_buffer(&mut self, idx: usize, pnts: &Vec<Position>, clrs: &Vec<Color>) {
         self.lcm.set_line_buffer(idx, pnts, clrs);
         self.ent.add_component(idx, COMPONENT_RENDER);
@@ -320,10 +324,24 @@ impl World {
 
             match component {
                 "text" => {
-                    if 3 == split.len() {
+                    if 3 <= split.len() {
                         let val = split[2].replace("\"", "");
                         self.ent.add_component(id, COMPONENT_ACTIVE);
                         self.entity_set_text(id, val);
+                    }
+                }
+                "color" => {
+                    if 5 == split.len() {
+                        let r = split[2].parse::<f32>().unwrap();
+                        let g = split[3].parse::<f32>().unwrap();
+                        let b = split[4].parse::<f32>().unwrap();
+                        self.entity_set_color_rgba(id, r, g, b, 1.0);
+                    } else if 6 == split.len() {
+                        let r = split[2].parse::<f32>().unwrap();
+                        let g = split[3].parse::<f32>().unwrap();
+                        let b = split[4].parse::<f32>().unwrap();
+                        let a = split[5].parse::<f32>().unwrap();
+                        self.entity_set_color_rgba(id, r, g, b, a);
                     }
                 }
                 "billboard" => {

@@ -15,7 +15,7 @@ pub struct EasingIdSpan {
     pub last: usize,
 }
 
-const EASING_SZ: usize = 32;
+const EASING_SZ: usize = 96;
 const EASING_VAR_INACTIVE: u8 = 0;
 pub const EASING_VAR_ALPHA: u8 = 1;
 
@@ -61,6 +61,7 @@ impl EasingComponentManager {
         let existing = self.find_existing(entity, variable);
         if EASING_SZ > existing {
             self.cursor = existing;
+            self.get_data_ref_mut(self.cursor).variable = EASING_VAR_INACTIVE;
         } else {
             // find first non-active ease
             for _i in 0..EASING_SZ {

@@ -46,8 +46,8 @@ impl CacheManager {
             const LOAD_LIMIT_PERCENT: i32 = 80;
             if LOAD_LIMIT_PERCENT < header.loading {
                 log(format!(
-                    "WARNING: Cache Loading ({}%) exceeds Load Limit ({}%)",
-                    header.loading, LOAD_LIMIT_PERCENT
+                    "WARNING: Cache Loading {} Bytes, ({}%) exceeds Load Limit ({}%)",
+                    header.start, header.loading, LOAD_LIMIT_PERCENT
                 ));
             }
 
@@ -57,6 +57,9 @@ impl CacheManager {
 
     pub fn print_loading(&mut self) {
         let header = unsafe { &*(self.data.as_ptr().offset(0) as *const CacheManagerHeader) };
-        log(format!("Cache Loading: {}%", header.loading));
+        log(format!(
+            "Cache Loading: {} Bytes, {}%",
+            header.start, header.loading
+        ));
     }
 }

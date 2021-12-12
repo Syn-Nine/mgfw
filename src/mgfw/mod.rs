@@ -11,7 +11,7 @@ use support::Gl;
 #[allow(unused_imports)]
 use rand;
 
-use glutin::event::{ElementState, Event, MouseButton, WindowEvent};
+use glutin::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use glutin::event_loop::EventLoop;
 use glutin::window::Icon;
 use glutin::window::WindowBuilder;
@@ -23,7 +23,8 @@ pub fn rnd() -> f32 {
 }
 
 #[allow(dead_code)]
-const PI: f64 = 3.1415926535897932384626433;
+pub const PI: f64 = 3.1415926535897932384626433;
+const WINDOW_SCALE: f64 = 2.0;
 
 #[allow(dead_code)]
 pub fn deg2rad(val: f32) -> f32 {
@@ -53,6 +54,13 @@ struct CoreData {
 #[allow(dead_code)]
 pub const EVENT_INVALID: u8 = 0;
 pub const EVENT_INPUT_MOUSE_BUTTON_UP: u8 = 1;
+
+pub const EVENT_INPUT_KEYBOARD_PRESSED_ESCAPE: u8 = 20;
+pub const EVENT_INPUT_KEYBOARD_PRESSED_UP: u8 = 21;
+pub const EVENT_INPUT_KEYBOARD_PRESSED_DOWN: u8 = 22;
+pub const EVENT_INPUT_KEYBOARD_PRESSED_LEFT: u8 = 23;
+pub const EVENT_INPUT_KEYBOARD_PRESSED_RIGHT: u8 = 24;
+pub const EVENT_INPUT_KEYBOARD_PRESSED_SPACE: u8 = 25;
 
 #[allow(dead_code)]
 pub struct Core {
@@ -85,7 +93,10 @@ impl Core {
             .with_title(title)
             .with_resizable(false)
             .with_window_icon(b)
-            .with_inner_size(glutin::dpi::LogicalSize::new(xres, yres));
+            .with_inner_size(glutin::dpi::LogicalSize::new(
+                xres as f64 * WINDOW_SCALE,
+                yres as f64 * WINDOW_SCALE,
+            ));
 
         let windowed_context = ContextBuilder::new()
             .with_vsync(false)
@@ -163,7 +174,7 @@ impl Core {
         }
 
         let mut ret = true;
-        //log(format!("{:?}", event);
+        //log(format!("{:?}", event));
         match event {
             Event::LoopDestroyed => ret = false,
             Event::WindowEvent { event, .. } => match event {
@@ -174,12 +185,15 @@ impl Core {
                 WindowEvent::CloseRequested => ret = false,
                 WindowEvent::CursorMoved { position, .. } => {
                     self.update_mouse_xy(
-                        (position.x / cache.scale_factor) as i32,
-                        (position.y / cache.scale_factor) as i32,
+                        (position.x / (cache.scale_factor * WINDOW_SCALE)) as i32,
+                        (position.y / (cache.scale_factor * WINDOW_SCALE)) as i32,
                     );
                 }
                 WindowEvent::MouseInput { state, button, .. } => {
                     self.update_mouse_button(button, state);
+                }
+                WindowEvent::KeyboardInput { input, .. } => {
+                    self.update_keyboard_input(&input);
                 }
                 _ => (),
             },
@@ -195,6 +209,30 @@ impl Core {
             }
         }
         ret
+    }
+
+    fn update_keyboard_input(&mut self, input: &KeyboardInput) {
+        if ElementState::Pressed == input.state {
+            match input.virtual_keycode {
+                Some(VirtualKeyCode::Escape) => {
+                    self.events.push_back(EVENT_INPUT_KEYBOARD_PRESSED_ESCAPE)
+                }
+                Some(VirtualKeyCode::Up) => self.events.push_back(EVENT_INPUT_KEYBOARD_PRESSED_UP),
+                Some(VirtualKeyCode::Down) => {
+                    self.events.push_back(EVENT_INPUT_KEYBOARD_PRESSED_DOWN)
+                }
+                Some(VirtualKeyCode::Left) => {
+                    self.events.push_back(EVENT_INPUT_KEYBOARD_PRESSED_LEFT)
+                }
+                Some(VirtualKeyCode::Right) => {
+                    self.events.push_back(EVENT_INPUT_KEYBOARD_PRESSED_RIGHT)
+                }
+                Some(VirtualKeyCode::Space) => {
+                    self.events.push_back(EVENT_INPUT_KEYBOARD_PRESSED_SPACE)
+                }
+                _ => (),
+            }
+        }
     }
 
     fn update_mouse_xy(&mut self, x: i32, y: i32) {
