@@ -21,7 +21,11 @@ Placeholder for information on feature examples contained inside this repo.
 Placeholder for tutorials on building simple common games.
 
 ### Games
-Placeholder for information and links to mini games that use this framework.
+Links to mini games that use this framework.
+- [Halloween Mahjong Solitaire](https://github.com/Syn-Nine/rust-mini-games/tree/main/2d-games/mahjong)
+- [Match Three](https://github.com/Syn-Nine/rust-mini-games/tree/main/2d-games/match-three)
+- [Tet-Rust](https://github.com/Syn-Nine/rust-mini-games/tree/main/2d-games/tet-rust)
+- [Tic-Tac-Toe](https://github.com/Syn-Nine/rust-mini-games/tree/main/2d-games/tictactoe)
 
 ### Future Work
 Placeholder for list of desired future features.
