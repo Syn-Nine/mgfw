@@ -2,6 +2,8 @@
 ## Rust Mini Game Framework
 MGFW is a batteries-included framework written in Rust for rapid prototyping of game concepts and algorithms yet still featureful and flexible to use as a starting point for larger, more complete games.
 
+FYI, this repo is out of date, see Galaxion Trade Empire and mirr/orb repos for the most up-to-date version.
+
 ### Features
 MGFW supports the following high level features:
 - Entity-Component-System (ECS) Data-Driven Architecture
